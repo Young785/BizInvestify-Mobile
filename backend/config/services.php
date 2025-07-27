@@ -35,4 +35,21 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET'),
+        'key' => env('STRIPE_KEY'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'commission_rate' => env('STRIPE_COMMISSION_RATE', 0.05), // 5%
+        'investment_fee_rate' => env('STRIPE_INVESTMENT_FEE_RATE', 0.03), // 3%
+        'default_account' => env('STRIPE_DEFAULT_ACCOUNT'),
+    ],
+
+    'paystack' => [
+        'secret' => env('PAYSTACK_SECRET_KEY'),
+        'public' => env('PAYSTACK_PUBLIC_KEY'),
+        'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
+        'commission_rate' => env('PAYSTACK_COMMISSION_RATE', 0.05), // 5%
+        'investment_fee_rate' => env('PAYSTACK_INVESTMENT_FEE_RATE', 0.03), // 3%
+    ],
+
 ];

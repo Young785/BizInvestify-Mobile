@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Business extends Model
 {
@@ -57,6 +58,14 @@ class Business extends Model
     public function investments(): HasMany
     {
         return $this->hasMany(Investment::class);
+    }
+
+    /**
+     * Get the transactions for this business.
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'listing_id')->where('listing_type', 'business');
     }
 
     /**
@@ -119,5 +128,53 @@ class Business extends Model
     public function incrementViews()
     {
         $this->increment('views_count');
+    }
+
+    /**
+     * Get the wishlist entries for this business.
+     */
+    public function wishlists(): MorphMany
+    {
+        return $this->morphMany(Wishlist::class, 'wishlistable');
+    }
+
+    /**
+     * Get the reviews for this business.
+     */
+    public function reviews(): MorphMany
+    {
+        return $this->morphMany(Review::class, 'reviewable');
+    }
+
+    /**
+     * Get the approved reviews for this business.
+     */
+    public function approvedReviews(): MorphMany
+    {
+        return $this->morphMany(Review::class, 'reviewable')->approved();
+    }
+
+    /**
+     * Get the average rating for this business.
+     */
+    public function getAverageRatingAttribute(): float
+    {
+        return Review::getAverageRating('business', $this->id);
+    }
+
+    /**
+     * Get the review count for this business.
+     */
+    public function getReviewCountAttribute(): int
+    {
+        return Review::getReviewCount('business', $this->id);
+    }
+
+    /**
+     * Get the verified investment count for this business.
+     */
+    public function getVerifiedInvestmentCountAttribute(): int
+    {
+        return Review::getVerifiedPurchaseCount('business', $this->id);
     }
 }

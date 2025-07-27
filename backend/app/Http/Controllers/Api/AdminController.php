@@ -11,6 +11,8 @@ use App\Models\Product;
 use App\Models\Investment;
 use App\Models\Transaction;
 use App\Models\Message;
+use App\Models\ActivityLog;
+use App\Models\Kyc;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -348,12 +350,12 @@ class AdminController extends Controller
     public function loginAsUser(Request $request, User $user): JsonResponse
     {
         try {
-            // Check if the current user is an admin
+            // Check if the current user is a super admin
             $currentUser = $request->user();
-            if (!$currentUser || $currentUser->role !== 'admin') {
+            if (!$currentUser || $currentUser->role !== 'super_admin') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized. Only admins can login as other users.'
+                    'message' => 'Unauthorized. Only super admins can impersonate users.'
                 ], 403);
             }
 
@@ -361,7 +363,7 @@ class AdminController extends Controller
             $token = $user->createToken('admin-impersonation')->plainTextToken;
 
             // Log the impersonation
-            Log::info('Admin impersonation: ' . $currentUser->email . ' logged in as ' . $user->email);
+            Log::info('Super admin impersonation: ' . $currentUser->email . ' logged in as ' . $user->email);
 
             return response()->json([
                 'success' => true,
@@ -391,24 +393,25 @@ class AdminController extends Controller
     public function getKYCApplications(Request $request): JsonResponse
     {
         try {
-            $query = User::whereNotNull('kyc_documents');
+            $query = \App\Models\Kyc::with('user');
 
             // Status filter
-            if ($request->has('status')) {
-                $query->where('kyc_status', $request->get('status'));
+            if ($request->has('status') && $request->get('status') !== 'all') {
+                $query->where('status', $request->get('status'));
             }
 
             // Search filter
             if ($request->has('search')) {
                 $search = $request->get('search');
-                $query->where(function($q) use ($search) {
+                $query->whereHas('user', function($q) use ($search) {
                     $q->where('first_name', 'like', "%{$search}%")
                       ->orWhere('last_name', 'like', "%{$search}%")
                       ->orWhere('email', 'like', "%{$search}%");
                 });
             }
 
-            $applications = $query->paginate($request->get('per_page', 15));
+            $applications = $query->orderBy('created_at', 'desc')
+                ->paginate($request->get('per_page', 15));
 
             return response()->json([
                 'success' => true,
@@ -426,26 +429,21 @@ class AdminController extends Controller
     /**
      * Get specific KYC application
      */
-    public function getKYCApplication(User $user): JsonResponse
+    public function getKYCApplication($id): JsonResponse
     {
         try {
-            if (!$user->kyc_documents) {
+            $kyc = \App\Models\Kyc::with('user')->find($id);
+            
+            if (!$kyc) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No KYC application found for this user'
+                    'message' => 'No KYC application found'
                 ], 404);
             }
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'user' => $user,
-                    'kyc_documents' => $user->kyc_documents,
-                    'kyc_status' => $user->kyc_status,
-                    'kyc_verified_at' => $user->kyc_verified_at,
-                    'kyc_rejected_at' => $user->kyc_rejected_at,
-                    'kyc_rejection_reason' => $user->kyc_rejection_reason
-                ]
+                'data' => $kyc
             ]);
         } catch (\Exception $e) {
             Log::error('Admin get KYC application error: ' . $e->getMessage());
@@ -459,15 +457,19 @@ class AdminController extends Controller
     /**
      * Approve KYC application
      */
-    public function approveKYC(User $user): JsonResponse
+    public function approveKYC($id): JsonResponse
     {
         try {
-            $user->update([
-                'kyc_status' => 'verified',
-                'kyc_verified_at' => now(),
-                'kyc_rejected_at' => null,
-                'kyc_rejection_reason' => null
-            ]);
+            $kyc = \App\Models\Kyc::find($id);
+            
+            if (!$kyc) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'KYC application not found'
+                ], 404);
+            }
+
+            $kyc->approve(auth()->user());
 
             return response()->json([
                 'success' => true,
@@ -485,18 +487,23 @@ class AdminController extends Controller
     /**
      * Reject KYC application
      */
-    public function rejectKYC(Request $request, User $user): JsonResponse
+    public function rejectKYC(Request $request, $id): JsonResponse
     {
         try {
             $validated = $request->validate([
                 'reason' => 'required|string|max:500'
             ]);
 
-            $user->update([
-                'kyc_status' => 'rejected',
-                'kyc_rejected_at' => now(),
-                'kyc_rejection_reason' => $validated['reason']
-            ]);
+            $kyc = \App\Models\Kyc::find($id);
+            
+            if (!$kyc) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'KYC application not found'
+                ], 404);
+            }
+
+            $kyc->reject(auth()->user(), $validated['reason']);
 
             return response()->json([
                 'success' => true,
@@ -1159,4 +1166,64 @@ class AdminController extends Controller
             ], 500);
         }
     }
-} 
+
+    /**
+     * Stop impersonating user
+     */
+    public function stopImpersonating(Request $request): JsonResponse
+    {
+        try {
+            // Get the original admin from token
+            $user = $request->user();
+            
+            // Check if this is an impersonation session
+            $originalAdminId = $request->input('original_admin_id');
+            
+            if (!$originalAdminId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No impersonation session found'
+                ], 400);
+            }
+            
+            // Find the original admin
+            $originalAdmin = User::find($originalAdminId);
+            
+            if (!$originalAdmin || $originalAdmin->role !== 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Original admin not found'
+                ], 404);
+            }
+            
+            // Create new token for original admin
+            $token = $originalAdmin->createToken('admin-token')->plainTextToken;
+            
+            // Log the activity
+            ActivityLog::create([
+                'user_id' => $originalAdmin->id,
+                'action' => 'stop_impersonation',
+                'description' => "Stopped impersonating user {$user->email}",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Impersonation stopped successfully',
+                'data' => [
+                    'user' => $originalAdmin,
+                    'token' => $token
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Stop impersonation failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to stop impersonation'
+            ], 500);
+        }
+    }
+}

@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Auth;
 class NotificationController extends Controller
 {
     /**
+     * Get user's notifications (index method for API routes)
+     */
+    public function index(Request $request): JsonResponse
+    {
+        return $this->getNotifications($request);
+    }
+
+    /**
      * Get user's notifications
      */
     public function getNotifications(Request $request): JsonResponse
@@ -21,6 +29,7 @@ class NotificationController extends Controller
             $perPage = $request->get('per_page', 15);
             $type = $request->get('type');
             $priority = $request->get('priority');
+            $unreadOnly = $request->get('unread_only', false);
 
             $query = Notification::where('user_id', $user->id);
 
@@ -30,6 +39,10 @@ class NotificationController extends Controller
 
             if ($priority) {
                 $query->where('priority', $priority);
+            }
+
+            if ($unreadOnly) {
+                $query->where('read_at', null);
             }
 
             $notifications = $query->orderBy('created_at', 'desc')
@@ -73,24 +86,22 @@ class NotificationController extends Controller
     /**
      * Mark notification as read
      */
-    public function markAsRead(Request $request): JsonResponse
+    public function markAsRead(Request $request, $notification): JsonResponse
     {
         try {
             $user = Auth::user();
-            $notificationId = $request->get('notification_id');
-
-            $notification = Notification::where('id', $notificationId)
+            $notificationModel = Notification::where('id', $notification)
                 ->where('user_id', $user->id)
                 ->first();
 
-            if (!$notification) {
+            if (!$notificationModel) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Notification not found'
                 ], 404);
             }
 
-            $notification->markAsRead();
+            $notificationModel->markAsRead();
 
             return response()->json([
                 'success' => true,
@@ -185,24 +196,22 @@ class NotificationController extends Controller
     /**
      * Delete notification
      */
-    public function deleteNotification(Request $request): JsonResponse
+    public function destroy($notification): JsonResponse
     {
         try {
             $user = Auth::user();
-            $notificationId = $request->get('notification_id');
-
-            $notification = Notification::where('id', $notificationId)
+            $notificationModel = Notification::where('id', $notification)
                 ->where('user_id', $user->id)
                 ->first();
 
-            if (!$notification) {
+            if (!$notificationModel) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Notification not found'
                 ], 404);
             }
 
-            $notification->delete();
+            $notificationModel->delete();
 
             return response()->json([
                 'success' => true,

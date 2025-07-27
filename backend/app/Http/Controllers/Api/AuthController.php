@@ -903,10 +903,18 @@ class AuthController extends Controller
         $user = $request->user();
 
         $validator = Validator::make($request->all(), [
-            'first_name' => 'sometimes|string|max:255',
-            'last_name' => 'sometimes|string|max:255',
-            'phone' => 'sometimes|string|max:20',
+            'first_name' => 'sometimes|nullable|string|max:255',
+            'last_name' => 'sometimes|nullable|string|max:255',
+            'phone' => 'sometimes|nullable|string|max:20',
+            'address' => 'sometimes|nullable|string|max:500',
+            'city' => 'sometimes|nullable|string|max:255',
+            'state' => 'sometimes|nullable|string|max:255',
+            'country' => 'sometimes|nullable|string|max:255',
+            'postal_code' => 'sometimes|nullable|string|max:20',
+            'date_of_birth' => 'sometimes|nullable|date|before:today',
+            'bio' => 'sometimes|nullable|string|max:1000',
             'avatar_url' => 'nullable|url',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max
         ]);
 
         if ($validator->fails()) {
@@ -917,7 +925,34 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $updateData = $request->only(['first_name', 'last_name', 'phone', 'avatar_url']);
+        $updateData = $request->only([
+            'first_name', 'last_name', 'phone', 'address', 'city', 'state', 
+            'country', 'postal_code', 'date_of_birth', 'bio', 'avatar_url'
+        ]);
+        
+        // Handle profile image upload
+        if ($request->hasFile('profile_image')) {
+            try {
+                $image = $request->file('profile_image');
+                $filename = 'profile_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
+                $path = $image->storeAs('profiles/' . $user->id, $filename, 'public');
+                $updateData['avatar_url'] = config('app.url') . '/storage/' . $path;
+                
+                // Delete old profile image if exists
+                if ($user->avatar_url && !str_contains($user->avatar_url, 'default')) {
+                    $oldPath = str_replace('/storage/', '', $user->avatar_url);
+                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Profile image upload failed: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to upload profile image'
+                ], 500);
+            }
+        }
         
         // Update full name if first_name or last_name changed
         if (isset($updateData['first_name']) || isset($updateData['last_name'])) {
@@ -935,6 +970,58 @@ class AuthController extends Controller
                 'user' => $user
             ]
         ]);
+    }
+
+    /**
+     * Upload profile image only
+     */
+    public function uploadProfileImage(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'profile_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $image = $request->file('profile_image');
+            $filename = 'profile_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('profiles/' . $user->id, $filename, 'public');
+            $avatarUrl = config('app.url') . '/storage/' . $path;
+            
+            // Delete old profile image if exists
+            if ($user->avatar_url && !str_contains($user->avatar_url, 'default')) {
+                $oldPath = str_replace('/storage/', '', $user->avatar_url);
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                }
+            }
+            
+            $user->update(['avatar_url' => $avatarUrl]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile image uploaded successfully',
+                'data' => [
+                    'user' => $user,
+                    'avatar_url' => $avatarUrl
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Profile image upload failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload profile image'
+            ], 500);
+        }
     }
 
     /**
@@ -958,6 +1045,182 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'data' => $stats
+        ]);
+    }
+
+    /**
+     * Change user password.
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+            'new_password_confirmation' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect'
+            ], 400);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully'
+        ]);
+    }
+
+    /**
+     * Get user's KYC application.
+     */
+    public function getMyKyc(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        
+        $kyc = \App\Models\Kyc::where('user_id', $user->id)->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => $kyc
+        ]);
+    }
+
+    /**
+     * Submit KYC application.
+     */
+    public function submitKyc(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'document_type' => 'required|string|in:passport,national_id,drivers_license',
+            'document_number' => 'required|string|max:255',
+            'document_front' => 'required|file|image|max:5120',
+            'document_back' => 'required|file|image|max:5120',
+            'selfie' => 'required|file|image|max:5120',
+            'proof_of_address' => 'required|file|image|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = $request->user();
+
+        // Check if user already has a KYC application
+        $existingKyc = \App\Models\Kyc::where('user_id', $user->id)->first();
+        if ($existingKyc) {
+            return response()->json([
+                'success' => false,
+                'message' => 'KYC application already exists'
+            ], 400);
+        }
+
+        try {
+            // Handle file uploads
+            $documentFrontPath = $request->file('document_front')->store('kyc/documents', 'public');
+            $documentBackPath = $request->file('document_back')->store('kyc/documents', 'public');
+            $selfiePath = $request->file('selfie')->store('kyc/selfies', 'public');
+            $proofOfAddressPath = $request->file('proof_of_address')->store('kyc/address', 'public');
+
+            $kyc = \App\Models\Kyc::create([
+                'user_id' => $user->id,
+                'document_type' => $request->document_type,
+                'document_number' => $request->document_number,
+                'document_front_path' => $documentFrontPath,
+                'document_back_path' => $documentBackPath,
+                'selfie_path' => $selfiePath,
+                'address_proof_path' => $proofOfAddressPath,
+                'status' => 'pending',
+                'submitted_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'KYC application submitted successfully',
+                'data' => $kyc
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('KYC submission failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to submit KYC application'
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify two-factor authentication.
+     */
+    public function verify2FA(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'secret' => 'required|string',
+            'code' => 'required|string|size:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = $request->user();
+        $google2fa = new Google2FA();
+
+        if ($google2fa->verifyKey($request->secret, $request->code)) {
+            $user->update([
+                'two_factor_secret' => $request->secret,
+                'two_factor_confirmed_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Two-factor authentication enabled successfully'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid verification code'
+        ], 400);
+    }
+
+    /**
+     * Disable two-factor authentication.
+     */
+    public function disable2FA(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $user->update([
+            'two_factor_secret' => null,
+            'two_factor_confirmed_at' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Two-factor authentication disabled successfully'
         ]);
     }
 }

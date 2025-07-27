@@ -5,29 +5,49 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Transaction extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'user_id',
+        'type',
+        'amount',
+        'currency',
+        'status',
+        'payment_method',
+        'reference_id',
+        'metadata',
+        'payment_intent_id',
         'buyer_id',
         'seller_id',
         'listing_id',
         'listing_type',
-        'amount',
-        'commission_amount',
-        'payment_method',
-        'status',
-        'stripe_payment_intent_id',
-        'payment_details',
+        'commission',
+        'net_amount',
+        'payment_reference',
+        'notes',
+        'refund_reason',
+        'refunded_at',
+        'completed_at'
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'commission_amount' => 'decimal:2',
-        'payment_details' => 'array',
+        'commission' => 'decimal:2',
+        'net_amount' => 'decimal:2',
+        'refunded_at' => 'datetime',
+        'completed_at' => 'datetime'
     ];
+
+    const STATUS_PENDING = 'pending';
+    const STATUS_PROCESSING = 'processing';
+    const STATUS_COMPLETED = 'completed';
+    const STATUS_FAILED = 'failed';
+    const STATUS_REFUNDED = 'refunded';
+    const STATUS_CANCELLED = 'cancelled';
 
     /**
      * Get the buyer of the transaction.
@@ -46,51 +66,70 @@ class Transaction extends Model
     }
 
     /**
-     * Scope a query to only include completed transactions.
+     * Get the related listing (polymorphic)
+     */
+    public function listing()
+    {
+        if ($this->listing_type === 'product') {
+            return $this->belongsTo(Product::class, 'listing_id');
+        } elseif ($this->listing_type === 'business') {
+            return $this->belongsTo(Business::class, 'listing_id');
+        }
+        return null;
+    }
+
+    /**
+     * Scope for completed transactions
      */
     public function scopeCompleted($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', self::STATUS_COMPLETED);
     }
 
     /**
-     * Scope a query to only include pending transactions.
+     * Scope for pending transactions
      */
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', self::STATUS_PENDING);
     }
 
     /**
-     * Scope a query to only include transactions by buyer.
+     * Scope for transactions by date range
      */
-    public function scopeByBuyer($query, $buyerId)
+    public function scopeDateRange($query, $startDate, $endDate)
     {
-        return $query->where('buyer_id', $buyerId);
+        return $query->whereBetween('created_at', [$startDate, $endDate]);
     }
 
     /**
-     * Scope a query to only include transactions by seller.
+     * Calculate commission based on amount
      */
-    public function scopeBySeller($query, $sellerId)
+    public static function calculateCommission($amount, $rate = 0.05)
     {
-        return $query->where('seller_id', $sellerId);
+        return $amount * $rate;
     }
 
     /**
-     * Scope a query to get transactions for a specific listing.
+     * Mark transaction as completed
      */
-    public function scopeForListing($query, $listingId, $listingType)
+    public function markAsCompleted()
     {
-        return $query->where('listing_id', $listingId)
-                    ->where('listing_type', $listingType);
+        $this->update([
+            'status' => self::STATUS_COMPLETED,
+            'completed_at' => now()
+        ]);
     }
 
     /**
-     * Get the net amount (amount minus commission).
+     * Process refund
      */
-    public function getNetAmountAttribute()
+    public function processRefund($reason = null)
     {
-        return $this->amount - $this->commission_amount;
+        $this->update([
+            'status' => self::STATUS_REFUNDED,
+            'refund_reason' => $reason,
+            'refunded_at' => now()
+        ]);
     }
 }

@@ -11,17 +11,26 @@ class Message extends Model
     use HasFactory;
 
     protected $fillable = [
+        'conversation_id',
         'sender_id',
-        'receiver_id',
-        'listing_id',
-        'listing_type',
-        'message',
+        'content',
+        'type',
         'is_read',
+        'metadata'
     ];
 
     protected $casts = [
         'is_read' => 'boolean',
+        'metadata' => 'array'
     ];
+
+    /**
+     * Get the conversation this message belongs to.
+     */
+    public function conversation(): BelongsTo
+    {
+        return $this->belongsTo(Conversation::class);
+    }
 
     /**
      * Get the sender of the message.
@@ -29,14 +38,6 @@ class Message extends Model
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_id');
-    }
-
-    /**
-     * Get the receiver of the message.
-     */
-    public function receiver(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'receiver_id');
     }
 
     /**
@@ -48,26 +49,27 @@ class Message extends Model
     }
 
     /**
-     * Scope a query to get conversation between two users.
+     * Scope a query to get messages for a specific conversation.
      */
-    public function scopeConversation($query, $user1Id, $user2Id)
+    public function scopeForConversation($query, $conversationId)
     {
-        return $query->where(function ($q) use ($user1Id, $user2Id) {
-            $q->where('sender_id', $user1Id)
-              ->where('receiver_id', $user2Id);
-        })->orWhere(function ($q) use ($user1Id, $user2Id) {
-            $q->where('sender_id', $user2Id)
-              ->where('receiver_id', $user1Id);
-        });
+        return $query->where('conversation_id', $conversationId);
     }
 
     /**
-     * Scope a query to get messages for a specific listing.
+     * Scope a query to get messages from a specific sender.
      */
-    public function scopeForListing($query, $listingId, $listingType)
+    public function scopeFromSender($query, $senderId)
     {
-        return $query->where('listing_id', $listingId)
-                    ->where('listing_type', $listingType);
+        return $query->where('sender_id', $senderId);
+    }
+
+    /**
+     * Scope a query to get messages of a specific type.
+     */
+    public function scopeOfType($query, $type)
+    {
+        return $query->where('type', $type);
     }
 
     /**
@@ -76,5 +78,41 @@ class Message extends Model
     public function markAsRead()
     {
         $this->update(['is_read' => true]);
+    }
+
+    /**
+     * Check if message is from a specific user.
+     */
+    public function isFrom(User $user): bool
+    {
+        return $this->sender_id === $user->id;
+    }
+
+    /**
+     * Get formatted content based on message type.
+     */
+    public function getFormattedContent(): string
+    {
+        switch ($this->type) {
+            case 'text':
+                return $this->content;
+            case 'image':
+                return '[Image]';
+            case 'file':
+                return '[File]';
+            case 'system':
+                return $this->content;
+            default:
+                return $this->content;
+        }
+    }
+
+    /**
+     * Get message preview (truncated content).
+     */
+    public function getPreview(int $length = 50): string
+    {
+        $content = $this->getFormattedContent();
+        return strlen($content) > $length ? substr($content, 0, $length) . '...' : $content;
     }
 }

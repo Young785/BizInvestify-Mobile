@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -27,6 +28,13 @@ class User extends Authenticatable
         'password',
         'role',
         'phone',
+        'address',
+        'city',
+        'state',
+        'country',
+        'postal_code',
+        'date_of_birth',
+        'bio',
         'avatar_url',
         'kyc_status',
         'kyc_documents',
@@ -54,6 +62,8 @@ class User extends Authenticatable
         'kyc_verified_at',
         'kyc_rejected_at',
         'kyc_rejection_reason',
+        'stripe_customer_id',
+        'stripe_account_id',
     ];
 
     /**
@@ -96,6 +106,7 @@ class User extends Authenticatable
             'remember_device' => 'boolean',
             'kyc_verified_at' => 'datetime',
             'kyc_rejected_at' => 'datetime',
+            'date_of_birth' => 'date',
         ];
     }
 
