@@ -328,4 +328,80 @@ class TransactionController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Export user's transactions
+     */
+    public function exportTransactions(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $validator = Validator::make($request->all(), [
+                'status' => 'nullable|string',
+                'type' => 'nullable|string',
+                'start_date' => 'nullable|date',
+                'end_date' => 'nullable|date|after_or_equal:start_date',
+                'format' => 'nullable|string|in:csv,json,excel'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $query = Transaction::where(function ($q) use ($user) {
+                $q->where('buyer_id', $user->id)
+                  ->orWhere('seller_id', $user->id);
+            });
+
+            if ($request->filled('status')) {
+                $query->where('status', $request->get('status'));
+            }
+
+            if ($request->filled('type')) {
+                if ($request->get('type') === 'purchase') {
+                    $query->where('buyer_id', $user->id);
+                } elseif ($request->get('type') === 'sale') {
+                    $query->where('seller_id', $user->id);
+                }
+            }
+
+            if ($request->filled('start_date')) {
+                $query->where('created_at', '>=', $request->get('start_date'));
+            }
+
+            if ($request->filled('end_date')) {
+                $query->where('created_at', '<=', $request->get('end_date'));
+            }
+
+            $transactions = $query->with(['buyer', 'seller'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $format = $request->get('format', 'csv');
+            $filename = 'transactions_' . date('Y-m-d_H-i-s') . '.' . $format;
+
+            // For now, return the data structure
+            // In a real implementation, you would generate and store the file
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'download_url' => '/api/transactions/download/' . $filename,
+                    'filename' => $filename,
+                    'count' => $transactions->count(),
+                    'format' => $format
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to export transactions: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to export transactions'
+            ], 500);
+        }
+    }
 }

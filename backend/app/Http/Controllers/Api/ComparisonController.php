@@ -437,4 +437,293 @@ class ComparisonController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get products from current session for comparison
+     */
+    public function getSessionProducts(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'session_id' => 'nullable|string'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = $request->user();
+            $sessionId = $request->get('session_id');
+
+            $comparison = Comparison::getOrCreateSession(
+                $user ? $user->id : null,
+                $sessionId,
+                'product'
+            );
+
+            $comparisonData = $comparison->getComparisonData();
+
+            return response()->json([
+                'success' => true,
+                'data' => $comparisonData,
+                'session_id' => $comparison->session_id,
+                'count' => count($comparisonData['items'] ?? [])
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve session products',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get comparison session by ID
+     */
+    public function getSession(Request $request, string $sessionId): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $comparison = Comparison::where('session_id', $sessionId)->first();
+
+            if (!$comparison) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Comparison session not found'
+                ], 404);
+            }
+
+            $comparisonData = $comparison->getComparisonData();
+
+            return response()->json([
+                'success' => true,
+                'data' => $comparisonData,
+                'session_id' => $comparison->session_id
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve comparison session',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Share comparison session
+     */
+    public function shareSession(Request $request, string $sessionId): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $comparison = Comparison::where('session_id', $sessionId)->first();
+
+            if (!$comparison) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Comparison session not found'
+                ], 404);
+            }
+
+            // Generate share URL
+            $shareUrl = url('/compare?session=' . $sessionId);
+
+            return response()->json([
+                'success' => true,
+                'share_url' => $shareUrl,
+                'message' => 'Comparison shared successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to share comparison session',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Export comparison session
+     */
+    public function exportSession(Request $request, string $sessionId): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'format' => 'required|in:pdf,csv,json'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = $request->user();
+            $format = $request->get('format');
+            $comparison = Comparison::where('session_id', $sessionId)->first();
+
+            if (!$comparison) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Comparison session not found'
+                ], 404);
+            }
+
+            $comparisonData = $comparison->getComparisonData();
+
+            return response()->json([
+                'success' => true,
+                'data' => $comparisonData,
+                'format' => $format,
+                'filename' => 'comparison_' . $sessionId . '.' . $format
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to export comparison session',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete comparison session
+     */
+    public function deleteSession(Request $request, string $sessionId): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $comparison = Comparison::where('session_id', $sessionId)->first();
+
+            if (!$comparison) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Comparison session not found'
+                ], 404);
+            }
+
+            $comparison->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Comparison session deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete comparison session',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Add item to comparison session
+     */
+    public function addItemToSession(Request $request, string $sessionId): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'item_id' => 'required|integer',
+                'item_type' => 'required|in:product,business'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = $request->user();
+            $itemId = $request->get('item_id');
+            $itemType = $request->get('item_type');
+
+            $comparison = Comparison::where('session_id', $sessionId)->first();
+
+            if (!$comparison) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Comparison session not found'
+                ], 404);
+            }
+
+            // Check if item exists
+            if ($itemType === 'product') {
+                $item = Product::find($itemId);
+            } else {
+                $item = Business::find($itemId);
+            }
+
+            if (!$item) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Item not found'
+                ], 404);
+            }
+
+            $comparison->addItem($itemId, $itemType);
+            $comparisonData = $comparison->getComparisonData();
+
+            return response()->json([
+                'success' => true,
+                'data' => $comparisonData,
+                'message' => 'Item added to comparison successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to add item to comparison session',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove item from comparison session
+     */
+    public function removeItemFromSession(Request $request, string $sessionId, int $itemId): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $comparison = Comparison::where('session_id', $sessionId)->first();
+
+            if (!$comparison) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Comparison session not found'
+                ], 404);
+            }
+
+            $comparison->removeItem($itemId);
+            $comparisonData = $comparison->getComparisonData();
+
+            return response()->json([
+                'success' => true,
+                'data' => $comparisonData,
+                'message' => 'Item removed from comparison successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to remove item from comparison session',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 } 

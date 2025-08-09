@@ -23,7 +23,7 @@ class MarketplaceService
         $stats = [
             'total_products' => Product::where('status', 'active')->count(),
             'total_businesses' => Business::where('status', 'active')->count(),
-            'total_users' => User::where('is_active', true)->count(),
+            'total_users' => User::where('is_verified', true)->count(),
             'total_transactions' => Transaction::where('status', 'completed')->count(),
             'total_investments' => Investment::where('status', 'completed')->count(),
             'total_reviews' => Review::approved()->count(),
@@ -47,24 +47,20 @@ class MarketplaceService
     private function getRevenueStats(): array
     {
         $totalRevenue = Transaction::where('status', 'completed')
-            ->whereIn('type', ['purchase', 'investment'])
             ->sum('amount');
 
         $monthlyRevenue = Transaction::where('status', 'completed')
-            ->whereIn('type', ['purchase', 'investment'])
             ->where('created_at', '>=', now()->startOfMonth())
             ->sum('amount');
 
         $commissionRevenue = Transaction::where('status', 'completed')
-            ->where('type', 'commission')
-            ->sum('amount');
+            ->sum('commission_amount');
 
         return [
             'total_revenue' => $totalRevenue,
             'monthly_revenue' => $monthlyRevenue,
             'commission_revenue' => $commissionRevenue,
             'average_transaction_value' => Transaction::where('status', 'completed')
-                ->whereIn('type', ['purchase', 'investment'])
                 ->avg('amount') ?? 0,
         ];
     }
@@ -77,7 +73,7 @@ class MarketplaceService
         $trendingProducts = Product::where('status', 'active')
             ->orderBy('views_count', 'desc')
             ->limit(5)
-            ->get(['id', 'name', 'views_count', 'average_rating']);
+            ->get(['id', 'title', 'views_count', 'average_rating']);
 
         $trendingBusinesses = Business::where('status', 'active')
             ->orderBy('views_count', 'desc')
@@ -131,10 +127,10 @@ class MarketplaceService
     private function getProductRecommendations(User $user, int $limit): array
     {
         // Get user's purchase history
-        $purchasedCategories = Transaction::where('user_id', $user->id)
-            ->where('type', 'purchase')
+        $purchasedCategories = Transaction::where('buyer_id', $user->id)
             ->where('status', 'completed')
-            ->join('products', 'transactions.metadata->product_id', '=', 'products.id')
+            ->where('listing_type', 'product')
+            ->join('products', 'transactions.listing_id', '=', 'products.id')
             ->select('products.category')
             ->distinct()
             ->pluck('category');
@@ -324,7 +320,7 @@ class MarketplaceService
     private function getUserGrowth($startDate): array
     {
         $totalUsers = User::where('created_at', '>=', $startDate)->count();
-        $activeUsers = User::where('is_active', true)
+        $activeUsers = User::where('is_verified', true)
             ->where('created_at', '>=', $startDate)
             ->count();
 
@@ -533,7 +529,7 @@ class MarketplaceService
         ];
 
         // User engagement
-        $activeUsers = User::where('is_active', true)->count();
+        $activeUsers = User::where('is_verified', true)->count();
         $totalUsers = User::count();
         $userEngagement = $totalUsers > 0 ? ($activeUsers / $totalUsers) * 100 : 0;
         $health['metrics']['user_engagement'] = $userEngagement;

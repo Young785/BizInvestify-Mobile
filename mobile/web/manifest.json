@@ -1,6 +1,6 @@
 {
-    "name": "bizinvestify",
-    "short_name": "bizinvestify",
+    "name": "bizinvestify_mobile",
+    "short_name": "bizinvestify_mobile",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

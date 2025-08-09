@@ -58,6 +58,7 @@ class User extends Authenticatable
         'email_2fa_code',
         'email_2fa_expires_at',
         'email_2fa_enabled',
+        'two_factor_secret',
         'two_factor_skipped',
         'kyc_verified_at',
         'kyc_rejected_at',

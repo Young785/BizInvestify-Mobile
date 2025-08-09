@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Drop foreign key constraints first
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['role_id']);
-            $table->dropColumn('role_id');
-        });
+        // Drop foreign key constraints first if they exist
+        if (Schema::hasColumn('users', 'role_id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropForeign(['role_id']);
+                $table->dropColumn('role_id');
+            });
+        }
 
         // Drop existing permission tables if they exist
         Schema::dropIfExists('user_permissions');

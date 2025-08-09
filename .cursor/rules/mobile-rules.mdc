@@ -1,0 +1,191 @@
+---
+alwaysApply: true
+---
+
+# BizInvestify Mobile Implementation Rules
+
+## Overview
+This document defines binding standards and best practices for implementing features in the BizInvestify mobile application. These rules ensure consistent UX, accessibility, maintainability, and performance across the app. Follow them unless an explicit, documented exception is approved in a PR.
+
+## Table of Contents
+1. Architecture & State Management
+2. Navigation & Routing
+3. Theme & Styling
+4. Inputs & Forms
+5. Modals, Sheets, Overlays
+6. Error Handling & Feedback
+7. Performance & Memory
+8. Accessibility
+9. Networking & Services
+10. Code Organization & Naming
+11. Testing
+12. Checklists
+
+## 1) Architecture & State Management
+- Use Riverpod exclusively (`flutter_riverpod`). Prefer `StateNotifierProvider` for state with actions.
+- Keep widgets pure; move IO/business logic to providers/services.
+- Providers live under `lib/src/features/<feature>/providers/` and are named `*_provider.dart`.
+- Model classes go in `.../models/` and are immutable. Use `freezed`/`json_serializable` where helpful.
+- Avoid global singletons. Inject via providers.
+
+Example pattern:
+```dart
+class AuthState {
+  final bool isLoading;
+  final User? user;
+  final String? error;
+  const AuthState({this.isLoading = false, this.user, this.error});
+}
+
+class AuthNotifier extends StateNotifier<AuthState> {
+  AuthNotifier(this._api) : super(const AuthState());
+  final ApiService _api;
+
+  Future<void> login(String email, String password) async {
+    state = AuthState(isLoading: true);
+    try {
+      final user = await _api.login(email, password);
+      state = AuthState(user: user);
+    } catch (e) {
+      state = AuthState(error: e.toString());
+    }
+  }
+}
+```
+
+## 2) Navigation & Routing
+- Use `go_router` only, centralized in `lib/src/core/routing/app_router.dart`.
+- Use `context.go(...)` for top-level changes; `context.push(...)` for drill-ins.
+- Do not call `Navigator.of(context).push` directly.
+- Add guards/redirects in the router, not inside leaf widgets.
+- Use `rootNavigatorKey` for app-wide overlays.
+
+## 3) Theme & Styling
+- Use `AppTheme` (Material 3 enabled). Do not hardcode colors or font sizes.
+- Use tokens from `AppColors`, `AppDimensions`, `AppTypography`.
+- Derive colors/typography from `Theme.of(context)` when possible.
+- Spacing: follow 8pt grid via `AppDimensions`. Radii and elevations from tokens.
+
+Correct usage:
+```dart
+Text('Title', style: Theme.of(context).textTheme.headlineMedium);
+Container(color: Theme.of(context).colorScheme.primary);
+```
+
+Avoid:
+```dart
+Text('Title', style: TextStyle(fontSize: 24));
+Container(color: Colors.blue);
+```
+
+## 4) Inputs & Forms
+- Use shared components: `CustomTextField`, `PasswordField` under `src/components/inputs/`.
+- Wrap related inputs in a `Form` with `GlobalKey<FormState>` and synchronous validators.
+- Keyboard & focus:
+  - Set `keyboardType`, `textInputAction` (next/done), and `inputFormatters`.
+  - On next: advance focus. On done: `FocusScope.of(context).unfocus()`.
+  - Ensure content is scrollable and keyboard-safe.
+- Accessibility:
+  - Provide `label` and `hint`. Respect `maxLength` and show counters as needed.
+- Loading/disabled: disable submit buttons during async submits; show spinner in-button.
+
+## 5) Modals, Sheets, Overlays
+- Use `showDialog` with a shaped `Dialog` (≥ 16px radius), padding 24px, and clear header/content/actions.
+- Bottom sheets via `showModalBottomSheet` with:
+  - `isScrollControlled: true`, `useSafeArea: true`
+  - `backgroundColor: Theme.of(context).colorScheme.surface`
+  - Rounded top shape (≥ 16px)
+  - Provide visible drag handle, sticky header/title, scrollable content, persistent action bar.
+- All global overlays must anchor to `rootNavigatorKey`.
+
+Bottom sheet helper:
+```dart
+await showModalBottomSheet(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  backgroundColor: Theme.of(context).colorScheme.surface,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+  ),
+  builder: (context) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: child,
+  ),
+);
+```
+
+## 6) Error Handling & Feedback
+- Providers/services return explicit error messages. No silent failures.
+- Surface results using themed snackbars/toasts and optional haptics.
+- For form errors, show inline helper/error text near the input.
+
+## 7) Performance & Memory
+- Prefer `const` constructors, pure widgets, and builder patterns for lists.
+- Debounce rapid input-driven network calls.
+- Dispose controllers/animations in `dispose()`.
+- Avoid heavy work in `build`; move to providers.
+- Use `CachedNetworkImage` for remote images.
+
+## 8) Accessibility
+- Touch targets ≥ 44x44dp.
+- Sufficient contrast using theme tokens.
+- Provide semantics labels for icon-only actions.
+- Support text scaling. Avoid clipped text; use flexible layouts and `maxLines` judiciously.
+- Avoid focus traps in modals; support back button and barrier dismiss for non-destructive flows.
+
+## 9) Networking & Services
+- All HTTP calls go through `lib/src/core/services/api_service.dart` or feature services.
+- Do not call HTTP directly from widgets.
+- Providers own request state (loading/error/data). Widgets subscribe and render accordingly.
+- Use secure storage for tokens (`flutter_secure_storage`).
+
+## 10) Code Organization & Naming
+- Screens: `.../screens/*_screen.dart`
+- Dialogs: `.../*_dialog.dart`
+- Bottom sheets: `.../*_sheet.dart`
+- Providers: `.../*_provider.dart`
+- Shared components: `lib/src/components/`
+- Shared utilities: `lib/src/core/utils/`
+
+Naming:
+- Files: `snake_case.dart`
+- Classes: `PascalCase`
+- Variables: `camelCase`
+- Constants: `UPPER_SNAKE_CASE`
+- Private members: `_camelCase`
+
+## 11) Testing
+- Widget tests for forms/dialogs/sheets covering validation, disabled states, and navigation intents.
+- Provider tests for state transitions and error paths.
+- Golden tests for critical screens with `AppTheme.lightTheme`.
+- No new lint warnings; tests must pass before PR.
+
+## 12) Checklists
+
+Before Starting
+- [ ] Confirm API contracts and designs
+- [ ] Define models and providers
+- [ ] Identify navigation routes and guards
+
+For Each Screen
+- [ ] Responsive layout, keyboard safe
+- [ ] Uses shared inputs and AppTheme tokens
+- [ ] Loading, error, empty states
+- [ ] Accessibility labels and semantics
+- [ ] Navigation via `go_router`
+
+Before PR
+- [ ] No lint warnings
+- [ ] Unit/widget tests added and passing
+- [ ] Performance sanity check
+- [ ] Screenshots for major UI
+- [ ] Docs updated where needed
+
+---
+
+References
+- Theme: `lib/src/core/theme/app_theme.dart`
+- Router: `lib/src/core/routing/app_router.dart`
+- Inputs: `lib/src/components/inputs/`
+- Dimensions/Colors/Type: `lib/src/core/constants/`

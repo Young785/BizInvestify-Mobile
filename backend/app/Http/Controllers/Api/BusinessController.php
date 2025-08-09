@@ -767,4 +767,145 @@ class BusinessController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Display a public listing of businesses (no authentication required).
+     */
+    public function publicIndex(Request $request): JsonResponse
+    {
+        try {
+            $query = Business::with(['seller', 'investments'])
+                ->where('status', 'active');
+
+            // Apply filters
+            if ($request->has('industry') && $request->industry) {
+                $query->where('industry', $request->industry);
+            }
+
+            if ($request->has('min_valuation') && $request->min_valuation) {
+                $query->where('valuation', '>=', $request->min_valuation);
+            }
+
+            if ($request->has('max_valuation') && $request->max_valuation) {
+                $query->where('valuation', '<=', $request->max_valuation);
+            }
+
+            if ($request->has('min_funding') && $request->min_funding) {
+                $query->where('funding_goal', '>=', $request->min_funding);
+            }
+
+            if ($request->has('max_funding') && $request->max_funding) {
+                $query->where('funding_goal', '<=', $request->max_funding);
+            }
+
+            if ($request->has('location') && $request->location) {
+                $query->where('location', 'LIKE', "%{$request->location}%");
+            }
+
+            if ($request->has('search') && $request->search) {
+                $searchTerm = $request->search;
+                $query->where(function($q) use ($searchTerm) {
+                    $q->where('name', 'LIKE', "%{$searchTerm}%")
+                      ->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                      ->orWhere('industry', 'LIKE', "%{$searchTerm}%");
+                });
+            }
+
+            // Apply sorting
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            $allowedSortFields = ['created_at', 'valuation', 'funding_goal', 'name', 'views_count'];
+            if (in_array($sortBy, $allowedSortFields)) {
+                $query->orderBy($sortBy, $sortOrder);
+            }
+
+            // Pagination
+            $perPage = $request->get('per_page', 12);
+            $perPage = min($perPage, 50);
+
+            $businesses = $query->paginate($perPage);
+
+            // Calculate funding progress for each business
+            $data = $businesses->items();
+            foreach ($data as $business) {
+                $totalInvested = $business->investments->where('status', 'completed')->sum('amount');
+                $business->funding_progress = $business->funding_goal > 0 
+                    ? round(($totalInvested / $business->funding_goal) * 100, 2) 
+                    : 0;
+                $business->total_invested = $totalInvested;
+                $business->investors_count = $business->investments->where('status', 'completed')->count();
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'meta' => [
+                    'current_page' => $businesses->currentPage(),
+                    'per_page' => $businesses->perPage(),
+                    'total' => $businesses->total(),
+                    'last_page' => $businesses->lastPage(),
+                    'from' => $businesses->firstItem(),
+                    'to' => $businesses->lastItem()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch public businesses', [
+                'error' => $e->getMessage(),
+                'request' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch businesses'
+            ], 500);
+        }
+    }
+
+    /**
+     * Display a public business (no authentication required).
+     */
+    public function publicShow(string $id): JsonResponse
+    {
+        try {
+            $business = Business::with(['seller', 'investments'])
+                ->where('status', 'active')
+                ->find($id);
+
+            if (!$business) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Business not found'
+                ], 404);
+            }
+
+            // Increment view count
+            $business->increment('views_count');
+
+            // Calculate funding progress
+            $totalInvested = $business->investments->where('status', 'completed')->sum('amount');
+            $business->funding_progress = $business->funding_goal > 0 
+                ? round(($totalInvested / $business->funding_goal) * 100, 2) 
+                : 0;
+            $business->total_invested = $totalInvested;
+            $business->investors_count = $business->investments->where('status', 'completed')->count();
+
+            return response()->json([
+                'success' => true,
+                'data' => $business
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch public business', [
+                'business_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch business'
+            ], 500);
+        }
+    }
 }

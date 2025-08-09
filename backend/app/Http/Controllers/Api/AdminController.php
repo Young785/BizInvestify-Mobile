@@ -645,8 +645,8 @@ class AdminController extends Controller
         try {
             $report = [
                 'total_users' => User::count(),
-                'active_users' => User::where('is_active', true)->count(),
-                'suspended_users' => User::where('is_active', false)->count(),
+                            'active_users' => User::where('is_verified', true)->count(),
+            'suspended_users' => User::where('is_verified', false)->count(),
                 'users_by_role' => User::select('role', DB::raw('count(*) as count'))
                     ->groupBy('role')
                     ->get(),

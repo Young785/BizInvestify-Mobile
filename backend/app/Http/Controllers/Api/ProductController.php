@@ -629,4 +629,114 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Display a public listing of products (no authentication required).
+     */
+    public function publicIndex(Request $request): JsonResponse
+    {
+        try {
+            $query = Product::with(['seller'])
+                ->where('status', 'active');
+
+            // Apply filters
+            if ($request->has('category') && $request->category) {
+                $query->where('category', $request->category);
+            }
+
+            if ($request->has('min_price') && $request->min_price) {
+                $query->where('price', '>=', $request->min_price);
+            }
+
+            if ($request->has('max_price') && $request->max_price) {
+                $query->where('price', '<=', $request->max_price);
+            }
+
+            if ($request->has('search') && $request->search) {
+                $searchTerm = $request->search;
+                $query->where(function($q) use ($searchTerm) {
+                    $q->where('title', 'LIKE', "%{$searchTerm}%")
+                      ->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                      ->orWhereJsonContains('tags', $searchTerm);
+                });
+            }
+
+            // Apply sorting
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            $allowedSortFields = ['created_at', 'price', 'title', 'views_count'];
+            if (in_array($sortBy, $allowedSortFields)) {
+                $query->orderBy($sortBy, $sortOrder);
+            }
+
+            // Pagination
+            $perPage = $request->get('per_page', 12);
+            $perPage = min($perPage, 50); // Max 50 items per page
+
+            $products = $query->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $products->items(),
+                'meta' => [
+                    'current_page' => $products->currentPage(),
+                    'per_page' => $products->perPage(),
+                    'total' => $products->total(),
+                    'last_page' => $products->lastPage(),
+                    'from' => $products->firstItem(),
+                    'to' => $products->lastItem()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch public products', [
+                'error' => $e->getMessage(),
+                'request' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch products'
+            ], 500);
+        }
+    }
+
+    /**
+     * Display a public product (no authentication required).
+     */
+    public function publicShow(string $id): JsonResponse
+    {
+        try {
+            $product = Product::with(['seller'])
+                ->where('status', 'active')
+                ->find($id);
+
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found'
+                ], 404);
+            }
+
+            // Increment view count
+            $product->increment('views_count');
+
+            return response()->json([
+                'success' => true,
+                'data' => $product
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch public product', [
+                'product_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch product'
+            ], 500);
+        }
+    }
 }

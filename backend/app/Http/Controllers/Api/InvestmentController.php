@@ -592,6 +592,37 @@ class InvestmentController extends Controller
     }
 
     /**
+     * Get user's own investments (as investor).
+     */
+    public function getMyInvestments(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            
+            $investments = Investment::with(['business', 'business.seller'])
+                ->where('investor_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $investments
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch user investments', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch investments'
+            ], 500);
+        }
+    }
+
+    /**
      * Get user's investment portfolio.
      */
     public function getUserPortfolio(Request $request): JsonResponse

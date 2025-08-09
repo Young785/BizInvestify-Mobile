@@ -33,10 +33,10 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
             
             // Professional details based on role
-            'businessName' => 'required_if:role,seller|string|max:255',
-            'businessType' => 'required_if:role,seller|string|max:255',
-            'investmentAmount' => 'required_if:role,investor|string|max:255',
-            'investmentFocus' => 'required_if:role,investor|string|max:255',
+            'businessName' => 'required_if:role,seller|max:255',
+            'businessType' => 'required_if:role,seller|max:255',
+            'investmentAmount' => 'required_if:role,investor|max:255',
+            'investmentFocus' => 'required_if:role,investor|max:255',
             
             // Compliance
             'agreeToTerms' => 'required|accepted',
@@ -64,8 +64,8 @@ class AuthController extends Controller
             'role' => $request->role,
                 'business_name' => $request->businessName,
                 'business_type' => $request->businessType,
-                'investment_amount' => $request->investmentAmount,
-                'investment_focus' => $request->investmentFocus,
+                'investment_amount' => (string) $request->investmentAmount,
+                'investment_focus' => (string) $request->investmentFocus,
             ]);
 
             // Log registration activity
@@ -183,6 +183,42 @@ class AuthController extends Controller
     }
 
     /**
+     * Check email verification status
+     */
+    public function checkEmailVerificationStatus(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid email',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'email_verified' => !is_null($user->email_verified_at),
+                'user_id' => $user->id,
+                'next_step' => !is_null($user->email_verified_at) ? 'phone_verification' : 'email_verification'
+            ]
+        ]);
+    }
+
+    /**
      * Resend email verification.
      */
     public function resendEmailVerification(Request $request): JsonResponse
@@ -222,6 +258,146 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Verification email sent successfully!'
         ]);
+    }
+
+    /**
+     * Send email verification OTP.
+     */
+    public function sendEmailVerificationOTP(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid email',
+                'errors' => $validator->fails()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        if ($user->isEmailVerified()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email is already verified'
+            ], 400);
+        }
+
+        // Generate 6-digit OTP
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        
+        // Store OTP in user record
+        $user->update([
+            'email_verification_otp' => $otp,
+            'email_verification_otp_expires_at' => now()->addMinutes(10)
+        ]);
+
+        // Send OTP via email
+        $this->sendEmailVerificationOTPEmail($user, $otp);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Verification code sent to your email!'
+        ]);
+    }
+
+    /**
+     * Verify email with OTP.
+     */
+    public function verifyEmailOTP(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'otp' => 'required|string|size:6'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid request',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        if ($user->isEmailVerified()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email is already verified'
+            ], 400);
+        }
+
+        // Check if OTP is valid and not expired
+        if ($user->email_verification_otp !== $request->otp ||
+            !$user->email_verification_otp_expires_at ||
+            $user->email_verification_otp_expires_at->isPast()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired verification code'
+            ], 400);
+        }
+
+        // Mark email as verified
+        $user->update([
+            'email_verified_at' => now(),
+            'email_verification_otp' => null,
+            'email_verification_otp_expires_at' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email verified successfully!',
+            'data' => [
+                'user_id' => $user->id,
+                'next_step' => 'phone_verification'
+            ]
+        ]);
+    }
+
+    /**
+     * Send email verification OTP email.
+     */
+    private function sendEmailVerificationOTPEmail(User $user, string $otp): void
+    {
+        try {
+            $data = [
+                'user' => $user,
+                'otp' => $otp,
+                'expires_at' => now()->addMinutes(10)->format('H:i')
+            ];
+
+            Mail::send('emails.email-verification-otp', $data, function ($message) use ($user) {
+                $message->to($user->email, $user->name)
+                        ->subject('Email Verification Code - BizInvestify');
+            });
+
+            Log::info('Email verification OTP sent', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'otp' => $otp
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send email verification OTP: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -749,7 +925,7 @@ class AuthController extends Controller
                 ]);
 
                 return response()->json([
-                    'success' => false,
+                    'success' => true,
                     'message' => '2FA code required',
                     'data' => [
                         'requires_2fa' => true,
@@ -1087,6 +1263,148 @@ class AuthController extends Controller
     }
 
     /**
+     * Send password reset link to user's email.
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'If a user with that email address exists, we will send a password reset link.'
+                ], 200);
+            }
+
+            // Generate password reset token
+            $token = Str::random(60);
+            $user->update([
+                'password_reset_token' => $token,
+                'password_reset_expires_at' => now()->addHours(24),
+            ]);
+
+            // Send password reset email
+            $this->sendPasswordResetEmail($user, $token);
+
+            Log::info('Password reset email sent', [
+                'email' => $user->email,
+                'ip' => $request->ip(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'If a user with that email address exists, we will send a password reset link.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Password reset failed', [
+                'email' => $request->email,
+                'ip' => $request->ip(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while processing your request.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset password using token.
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'token' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+            'password_confirmation' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = User::where('email', $request->email)
+                ->where('password_reset_token', $request->token)
+                ->where('password_reset_expires_at', '>', now())
+                ->first();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or expired reset token.'
+                ], 422);
+            }
+
+            // Update password and clear reset token
+            $user->update([
+                'password' => Hash::make($request->password),
+                'password_reset_token' => null,
+                'password_reset_expires_at' => null,
+            ]);
+
+            Log::info('Password reset successful', [
+                'email' => $user->email,
+                'ip' => $request->ip(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password reset successfully. You can now login with your new password.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Password reset failed', [
+                'email' => $request->email,
+                'ip' => $request->ip(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while resetting your password.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Send password reset email.
+     */
+    private function sendPasswordResetEmail(User $user, string $token): void
+    {
+        $resetUrl = config('app.frontend_url', 'https://bizinvestify.test') . '/auth/reset-password?email=' . urlencode($user->email) . '&token=' . $token;
+
+        Mail::send('emails.password-reset', [
+            'user' => $user,
+            'resetUrl' => $resetUrl,
+            'token' => $token,
+        ], function ($message) use ($user) {
+            $message->to($user->email)
+                    ->subject('Reset Your Password - BizInvestify');
+        });
+    }
+
+    /**
      * Get user's KYC application.
      */
     public function getMyKyc(Request $request): JsonResponse
@@ -1221,6 +1539,113 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Two-factor authentication disabled successfully'
+        ]);
+    }
+
+    /**
+     * Verify 2FA code for authenticated users (post-login verification).
+     */
+    public function verify2FAForSession(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|string|size:6'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification code',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required'
+            ], 401);
+        }
+
+        if (!$user->hasTwoFactorEnabled()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Two-factor authentication is not enabled for this account'
+            ], 400);
+        }
+
+        try {
+            $google2fa = new Google2FA();
+            $valid = $google2fa->verifyKey($user->two_factor_secret, $request->code);
+
+            if ($valid) {
+                // Mark 2FA as verified for this session
+                $sessionKey = '2fa_verified_' . $user->id;
+                $request->session()->put($sessionKey, true);
+
+                Log::info('2FA verification completed for session', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'ip' => $request->ip()
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Two-factor authentication verified successfully',
+                    'data' => [
+                        'user_id' => $user->id,
+                        'verification_complete' => true
+                    ]
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification code'
+            ], 400);
+
+        } catch (\Exception $e) {
+            Log::error('2FA session verification failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Verification failed. Please try again.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Check if 2FA verification is required for the current session.
+     */
+    public function check2FAVerificationStatus(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required'
+            ], 401);
+        }
+
+        if (!$user->hasTwoFactorEnabled()) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'requires_2fa_verification' => false
+                ]
+            ]);
+        }
+
+        $sessionKey = '2fa_verified_' . $user->id;
+        $isVerified = $request->session()->has($sessionKey);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'requires_2fa_verification' => !$isVerified,
+                'user_id' => $user->id
+            ]
         ]);
     }
 }

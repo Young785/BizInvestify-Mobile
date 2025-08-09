@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Bizinvestify</string>
+	<string>Bizinvestify Mobile</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>bizinvestify</string>
+	<string>bizinvestify_mobile</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -24,15 +24,27 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+  <key>UIRequiresFullScreen</key>
+  <true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+  
+  <!-- Privacy usage descriptions for camera/photos/microphone if needed by plugins -->
+  <key>NSCameraUsageDescription</key>
+  <string>This app uses the camera to scan QR codes and capture photos for profiles and KYC.</string>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>This app requires access to your photo library for uploading images and selecting files.</string>
+  <key>NSPhotoLibraryAddUsageDescription</key>
+  <string>This app saves images to your photo library when exporting or downloading content.</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Microphone access may be used for video recording within KYC flows.</string>
+  <key>NSFaceIDUsageDescription</key>
+  <string>Face ID is used to securely authenticate you for quick logins and sensitive actions.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
+    	<string>UIInterfaceOrientationPortrait</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
@@ -45,5 +57,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+  
+  <!-- Background modes for remote notifications -->
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>remote-notification</string>
+    <string>fetch</string>
+  </array>
 </dict>
 </plist>

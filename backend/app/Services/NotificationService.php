@@ -336,7 +336,7 @@ class NotificationService
      */
     private static function notifyAdminsKYCSubmission(User $user): void
     {
-        $admins = User::where('role', 'admin')->where('is_active', true)->get();
+        $admins = User::where('role', 'admin')->where('is_verified', true)->get();
         
         foreach ($admins as $admin) {
             Notification::createNotification(
@@ -355,7 +355,7 @@ class NotificationService
      */
     private static function notifyAdminsNewListing(User $user, string $listingType, string $listingTitle): void
     {
-        $admins = User::where('role', 'admin')->where('is_active', true)->get();
+        $admins = User::where('role', 'admin')->where('is_verified', true)->get();
         
         foreach ($admins as $admin) {
             Notification::createNotification(
@@ -388,7 +388,7 @@ class NotificationService
      */
     private static function notifyAdminsSecurityThreat(string $email, int $attempts): void
     {
-        $admins = User::where('role', 'admin')->where('is_active', true)->get();
+        $admins = User::where('role', 'admin')->where('is_verified', true)->get();
         
         foreach ($admins as $admin) {
             Notification::createNotification(

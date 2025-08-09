@@ -59,6 +59,7 @@ class AnalyticsController extends Controller
             Log::error('Failed to get seller analytics: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
+                'error' => $e->getMessage(),
                 'message' => 'Failed to load seller analytics'
             ], 500);
         }
@@ -115,7 +116,8 @@ class AnalyticsController extends Controller
             Log::error('Failed to get overview analytics: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load overview analytics'
+                'message' => 'Failed to load overview analytics',
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }

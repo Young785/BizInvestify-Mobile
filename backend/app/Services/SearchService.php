@@ -15,19 +15,17 @@ class SearchService
      */
     public function searchProducts(Request $request): array
     {
-        $query = Product::with(['user', 'category'])
+        $query = Product::with(['seller'])
             ->where('status', 'active');
 
         // Text search
         if ($request->filled('q')) {
             $searchTerm = $request->get('q');
             $query->where(function (Builder $q) use ($searchTerm) {
-                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                $q->where('title', 'LIKE', "%{$searchTerm}%")
                   ->orWhere('description', 'LIKE', "%{$searchTerm}%")
                   ->orWhere('tags', 'LIKE', "%{$searchTerm}%")
-                  ->orWhereHas('category', function (Builder $categoryQuery) use ($searchTerm) {
-                      $categoryQuery->where('name', 'LIKE', "%{$searchTerm}%");
-                  });
+                  ->orWhere('category', 'LIKE', "%{$searchTerm}%");
             });
         }
 
@@ -46,7 +44,7 @@ class SearchService
 
         // Location filter
         if ($request->filled('location')) {
-            $query->whereHas('user', function (Builder $userQuery) use ($request) {
+            $query->whereHas('seller', function (Builder $userQuery) use ($request) {
                 $userQuery->where('city', 'LIKE', "%{$request->get('location')}%")
                          ->orWhere('state', 'LIKE', "%{$request->get('location')}%")
                          ->orWhere('country', 'LIKE', "%{$request->get('location')}%");
@@ -55,7 +53,7 @@ class SearchService
 
         // Seller rating filter
         if ($request->filled('min_rating')) {
-            $query->whereHas('user', function (Builder $userQuery) use ($request) {
+            $query->whereHas('seller', function (Builder $userQuery) use ($request) {
                 $userQuery->where('trust_score', '>=', $request->get('min_rating'));
             });
         }
@@ -81,8 +79,8 @@ class SearchService
             case 'price':
                 $query->orderBy('price', $sortOrder);
                 break;
-            case 'name':
-                $query->orderBy('name', $sortOrder);
+            case 'title':
+                $query->orderBy('title', $sortOrder);
                 break;
             case 'popularity':
                 $query->orderBy('views_count', $sortOrder);
@@ -112,7 +110,7 @@ class SearchService
      */
     public function searchBusinesses(Request $request): array
     {
-        $query = Business::with(['user', 'industry'])
+        $query = Business::with(['seller'])
             ->where('status', 'active');
 
         // Text search
@@ -121,10 +119,7 @@ class SearchService
             $query->where(function (Builder $q) use ($searchTerm) {
                 $q->where('name', 'LIKE', "%{$searchTerm}%")
                   ->orWhere('description', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('industry', 'LIKE', "%{$searchTerm}%")
-                  ->orWhereHas('industry', function (Builder $industryQuery) use ($searchTerm) {
-                      $industryQuery->where('name', 'LIKE', "%{$searchTerm}%");
-                  });
+                  ->orWhere('industry', 'LIKE', "%{$searchTerm}%");
             });
         }
 
@@ -159,7 +154,7 @@ class SearchService
 
         // Location filter
         if ($request->filled('location')) {
-            $query->whereHas('user', function (Builder $userQuery) use ($request) {
+            $query->whereHas('seller', function (Builder $userQuery) use ($request) {
                 $userQuery->where('city', 'LIKE', "%{$request->get('location')}%")
                          ->orWhere('state', 'LIKE', "%{$request->get('location')}%")
                          ->orWhere('country', 'LIKE', "%{$request->get('location')}%");
@@ -168,7 +163,7 @@ class SearchService
 
         // Owner rating filter
         if ($request->filled('min_rating')) {
-            $query->whereHas('user', function (Builder $userQuery) use ($request) {
+            $query->whereHas('seller', function (Builder $userQuery) use ($request) {
                 $userQuery->where('trust_score', '>=', $request->get('min_rating'));
             });
         }
@@ -307,7 +302,7 @@ class SearchService
             ],
             'conditions' => ['new', 'like_new', 'good', 'fair', 'used'],
             'locations' => Product::where('status', 'active')
-                ->join('users', 'products.user_id', '=', 'users.id')
+                ->join('users', 'products.seller_id', '=', 'users.id')
                 ->select('users.city', 'users.state', 'users.country')
                 ->whereNotNull('users.city')
                 ->distinct()
@@ -353,7 +348,7 @@ class SearchService
                 ['label' => 'Over 50%', 'min' => 50, 'max' => 100],
             ],
             'locations' => Business::where('status', 'active')
-                ->join('users', 'businesses.user_id', '=', 'users.id')
+                ->join('users', 'businesses.seller_id', '=', 'users.id')
                 ->select('users.city', 'users.state', 'users.country')
                 ->whereNotNull('users.city')
                 ->distinct()
@@ -372,7 +367,7 @@ class SearchService
     public function getTrendingProducts(int $limit = 10): array
     {
         $trending = Product::where('status', 'active')
-            ->with(['user'])
+            ->with(['seller'])
             ->orderBy('views_count', 'desc')
             ->orderBy('created_at', 'desc')
             ->limit($limit)
@@ -390,7 +385,7 @@ class SearchService
     public function getTrendingBusinesses(int $limit = 10): array
     {
         $trending = Business::where('status', 'active')
-            ->with(['user'])
+            ->with(['seller'])
             ->orderBy('views_count', 'desc')
             ->orderBy('created_at', 'desc')
             ->limit($limit)
