@@ -38,7 +38,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // Schedule after first frame to avoid build-phase state changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshBadges();
-      _loadAnalytics();
     });
   }
 

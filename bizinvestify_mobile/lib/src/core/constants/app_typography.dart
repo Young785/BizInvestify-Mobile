@@ -24,7 +24,7 @@ class AppTypography {
   static const FontWeight extrabold = FontWeight.w800;
 
   // Display Text Styles - Hero text
-  static const TextStyle displayLarge = TextStyle(
+  static TextStyle displayLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 64,
     fontWeight: extrabold,
@@ -33,7 +33,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle displayMedium = TextStyle(
+  static TextStyle displayMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 48,
     fontWeight: extrabold,
@@ -42,7 +42,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle displaySmall = TextStyle(
+  static TextStyle displaySmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 40,
     fontWeight: bold,
@@ -52,7 +52,7 @@ class AppTypography {
   );
 
   // Headline Text Styles - Section headers
-  static const TextStyle headlineLarge = TextStyle(
+  static TextStyle headlineLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 32,
     fontWeight: bold,
@@ -61,7 +61,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle headlineMedium = TextStyle(
+  static TextStyle headlineMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 28,
     fontWeight: bold,
@@ -70,7 +70,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle headlineSmall = TextStyle(
+  static TextStyle headlineSmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 24,
     fontWeight: bold,
@@ -80,7 +80,7 @@ class AppTypography {
   );
 
   // Title Text Styles - Card headers
-  static const TextStyle titleLarge = TextStyle(
+  static TextStyle titleLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 22,
     fontWeight: semibold,
@@ -89,7 +89,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle titleMedium = TextStyle(
+  static TextStyle titleMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 18,
     fontWeight: semibold,
@@ -98,7 +98,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle titleSmall = TextStyle(
+  static TextStyle titleSmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: semibold,
@@ -108,7 +108,7 @@ class AppTypography {
   );
 
   // Body Text Styles - Main content
-  static const TextStyle bodyLarge = TextStyle(
+  static TextStyle bodyLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: regular,
@@ -117,7 +117,7 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
-  static const TextStyle bodyMedium = TextStyle(
+  static TextStyle bodyMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: regular,
@@ -126,7 +126,7 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
-  static const TextStyle bodySmall = TextStyle(
+  static TextStyle bodySmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: regular,
@@ -136,7 +136,7 @@ class AppTypography {
   );
 
   // Label Text Styles - Buttons and small text
-  static const TextStyle labelLarge = TextStyle(
+  static TextStyle labelLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: semibold,
@@ -145,7 +145,7 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
-  static const TextStyle labelMedium = TextStyle(
+  static TextStyle labelMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: semibold,
@@ -154,7 +154,7 @@ class AppTypography {
     color: AppColors.textTertiary,
   );
 
-  static const TextStyle labelSmall = TextStyle(
+  static TextStyle labelSmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 10,
     fontWeight: semibold,
@@ -164,7 +164,7 @@ class AppTypography {
   );
 
   // Caption Text Styles
-  static const TextStyle captionLarge = TextStyle(
+  static TextStyle captionLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: regular,
@@ -173,7 +173,7 @@ class AppTypography {
     color: AppColors.textTertiary,
   );
 
-  static const TextStyle captionMedium = TextStyle(
+  static TextStyle captionMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: regular,
@@ -182,7 +182,7 @@ class AppTypography {
     color: AppColors.textTertiary,
   );
 
-  static const TextStyle captionSmall = TextStyle(
+  static TextStyle captionSmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 10,
     fontWeight: regular,
@@ -192,7 +192,7 @@ class AppTypography {
   );
 
   // Button Text Styles
-  static const TextStyle buttonLarge = TextStyle(
+  static TextStyle buttonLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 18,
     fontWeight: semibold,
@@ -201,7 +201,7 @@ class AppTypography {
     color: AppColors.white,
   );
 
-  static const TextStyle buttonMedium = TextStyle(
+  static TextStyle buttonMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: semibold,
@@ -210,7 +210,7 @@ class AppTypography {
     color: AppColors.white,
   );
 
-  static const TextStyle buttonSmall = TextStyle(
+  static TextStyle buttonSmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: semibold,
@@ -220,7 +220,7 @@ class AppTypography {
   );
 
   // Financial Text Styles
-  static const TextStyle financialLarge = TextStyle(
+  static TextStyle financialLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 32,
     fontWeight: bold,
@@ -229,7 +229,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle financialMedium = TextStyle(
+  static TextStyle financialMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 24,
     fontWeight: semibold,
@@ -238,7 +238,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle financialSmall = TextStyle(
+  static TextStyle financialSmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 18,
     fontWeight: medium,
@@ -277,7 +277,7 @@ class AppTypography {
 
   // Complete Text Theme
   static TextTheme get textTheme {
-    return const TextTheme(
+    return TextTheme(
       displayLarge: displayLarge,
       displayMedium: displayMedium,
       displaySmall: displaySmall,
@@ -297,7 +297,7 @@ class AppTypography {
   }
 
   // Special Text Styles for specific use cases
-  static const TextStyle appBarTitle = TextStyle(
+  static TextStyle appBarTitle = TextStyle(
     fontFamily: fontFamily,
     fontSize: 20,
     fontWeight: bold,
@@ -306,7 +306,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle cardTitle = TextStyle(
+  static TextStyle cardTitle = TextStyle(
     fontFamily: fontFamily,
     fontSize: 18,
     fontWeight: semibold,
@@ -315,7 +315,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle cardSubtitle = TextStyle(
+  static TextStyle cardSubtitle = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: regular,
@@ -324,7 +324,7 @@ class AppTypography {
     color: AppColors.textTertiary,
   );
 
-  static const TextStyle bottomNavLabel = TextStyle(
+  static TextStyle bottomNavLabel = TextStyle(
     fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: medium,
@@ -332,7 +332,7 @@ class AppTypography {
     letterSpacing: 0.5,
   );
 
-  static const TextStyle inputLabel = TextStyle(
+  static TextStyle inputLabel = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: medium,
@@ -341,7 +341,7 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
-  static const TextStyle inputHint = TextStyle(
+  static TextStyle inputHint = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: regular,
@@ -350,7 +350,7 @@ class AppTypography {
     color: AppColors.textMuted,
   );
 
-  static const TextStyle errorText = TextStyle(
+  static TextStyle errorText = TextStyle(
     fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: medium,
