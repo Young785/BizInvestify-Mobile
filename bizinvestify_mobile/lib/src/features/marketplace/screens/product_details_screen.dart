@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../models/product_model.dart';
-import '../providers/marketplace_provider.dart';
+import '../models/product_model.dart' as product_model;
+import '../providers/marketplace_provider.dart' as marketplace_provider;
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/payment_sheet.dart';
 import '../../orders/screens/order_details_screen.dart';
@@ -26,7 +26,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
   late TabController _tabController;
   int _selectedImageIndex = 0;
   bool _isFavorite = false;
-  Product? _product;
+  product_model.Product? _product;
 
   @override
   void initState() {

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/core/routing/app_router.dart';
 import 'features/payments/stripe_service.dart';
+import 'src/core/services/notification_service.dart';
 
 const String kStripePublishableKey = String.fromEnvironment('STRIPE_PUBLISHABLE_KEY', defaultValue: '');
 
@@ -12,6 +13,7 @@ void main() async {
   if (kStripePublishableKey.isNotEmpty) {
     await stripeService.initialize(publishableKey: kStripePublishableKey);
   }
+  await NotificationService.initialize();
 
   runApp(
     const ProviderScope(
