@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../providers/marketplace_provider.dart';
 
 class BusinessCard extends StatelessWidget {
@@ -21,7 +20,7 @@ class BusinessCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(16.0),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -31,7 +30,7 @@ class BusinessCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.spacing16),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -44,7 +43,7 @@ class BusinessCard extends StatelessWidget {
                     height: 50,
                     decoration: BoxDecoration(
                       color: AppColors.primary500.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
+                      borderRadius: BorderRadius.circular(12.0),
                     ),
                     child: const Icon(
                       Icons.business,
@@ -53,7 +52,7 @@ class BusinessCard extends StatelessWidget {
                     ),
                   ),
                   
-                  const SizedBox(width: AppDimensions.spacing12),
+                  const SizedBox(width: 12.0),
                   
                   // Business Info
                   Expanded(
@@ -64,7 +63,7 @@ class BusinessCard extends StatelessWidget {
                           business.name,
                           style: AppTypography.titleMedium.copyWith(
                             fontWeight: AppTypography.semibold,
-                            color: AppColors.text800,
+                            color: AppColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -75,7 +74,7 @@ class BusinessCard extends StatelessWidget {
                         Text(
                           business.industry,
                           style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.text600,
+                            color: AppColors.textTertiary,
                           ),
                         ),
                       ],
@@ -90,16 +89,16 @@ class BusinessCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: business.status == 'active'
-                          ? AppColors.accent500.withOpacity(0.1)
-                          : AppColors.text400.withOpacity(0.1),
+                          ? AppColors.secondary500.withOpacity(0.1)
+                          : AppColors.textQuaternary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       business.status.toUpperCase(),
                       style: AppTypography.captionSmall.copyWith(
                         color: business.status == 'active'
-                            ? AppColors.accent500
-                            : AppColors.text500,
+                            ? AppColors.secondary500
+                            : AppColors.textTertiary,
                         fontWeight: AppTypography.medium,
                       ),
                     ),
@@ -107,19 +106,19 @@ class BusinessCard extends StatelessWidget {
                 ],
               ),
               
-              const SizedBox(height: AppDimensions.spacing16),
+              const SizedBox(height: 16.0),
               
               // Description
               Text(
                 business.description,
                 style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.text600,
+                  color: AppColors.textTertiary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               
-              const SizedBox(height: AppDimensions.spacing16),
+              const SizedBox(height: 16.0),
               
               // Financial Info
               Row(
@@ -127,31 +126,31 @@ class BusinessCard extends StatelessWidget {
                   // Valuation
                   Expanded(
                     child: _buildFinancialItem(
-                      label: 'Valuation',
+                      labelText: 'Valuation',
                       value: '\$${(business.valuation / 1000000).toStringAsFixed(1)}M',
                       icon: Icons.assessment,
                       color: AppColors.primary500,
                     ),
                   ),
                   
-                  const SizedBox(width: AppDimensions.spacing12),
+                  const SizedBox(width: 12.0),
                   
                   // Funding Goal
                   Expanded(
                     child: _buildFinancialItem(
-                      label: 'Funding Goal',
+                      labelText: 'Funding Goal',
                       value: '\$${(business.fundingGoal / 1000).toStringAsFixed(0)}K',
                       icon: Icons.trending_up,
-                      color: AppColors.accent500,
+                      color: AppColors.secondary500,
                     ),
                   ),
                   
-                  const SizedBox(width: AppDimensions.spacing12),
+                  const SizedBox(width: 12.0),
                   
                   // Equity Offered
                   Expanded(
                     child: _buildFinancialItem(
-                      label: 'Equity',
+                      labelText: 'Equity',
                       value: '${business.equityOffered.toStringAsFixed(1)}%',
                       icon: Icons.pie_chart,
                       color: AppColors.primary600,
@@ -160,7 +159,7 @@ class BusinessCard extends StatelessWidget {
                 ],
               ),
               
-              const SizedBox(height: AppDimensions.spacing16),
+              const SizedBox(height: 16.0),
               
               // Footer
               Row(
@@ -170,7 +169,7 @@ class BusinessCard extends StatelessWidget {
                   Text(
                     'by ${business.ownerName}',
                     style: AppTypography.captionMedium.copyWith(
-                      color: AppColors.text500,
+                      color: AppColors.textTertiary,
                     ),
                   ),
                   
@@ -221,7 +220,7 @@ class BusinessCard extends StatelessWidget {
             Text(
               label,
               style: AppTypography.captionSmall.copyWith(
-                color: AppColors.text500,
+                color: AppColors.textTertiary,
               ),
             ),
           ],
@@ -233,7 +232,7 @@ class BusinessCard extends StatelessWidget {
           value,
           style: AppTypography.titleSmall.copyWith(
             fontWeight: AppTypography.bold,
-            color: AppColors.text800,
+            color: AppColors.textPrimary,
           ),
         ),
       ],

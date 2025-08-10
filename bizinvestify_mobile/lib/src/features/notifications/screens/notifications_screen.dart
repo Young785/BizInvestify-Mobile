@@ -61,7 +61,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         title: const Text('Notifications'),
         backgroundColor: Colors.white,

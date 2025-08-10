@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../widgets/product_card.dart';
 import '../widgets/business_card.dart';
 import '../providers/marketplace_provider.dart';
@@ -46,7 +45,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
     final marketplaceState = ref.watch(marketplaceProvider);
     
     return Scaffold(
-      backgroundColor: AppColors.background50,
+      backgroundColor: AppColors.backgroundPrimary,
       body: CustomScrollView(
         slivers: [
           // Search App Bar
@@ -145,12 +144,12 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
         ref.read(marketplaceProvider.notifier).loadProducts();
       },
       child: GridView.builder(
-        padding: const EdgeInsets.all(AppDimensions.spacing16),
+        padding: const EdgeInsets.all(16.0),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.75,
-          crossAxisSpacing: AppDimensions.spacing16,
-          mainAxisSpacing: AppDimensions.spacing16,
+          crossAxisSpacing: 16.0,
+          mainAxisSpacing: 16.0,
         ),
         itemCount: state.products.length,
         itemBuilder: (context, index) {
@@ -184,12 +183,12 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
         ref.read(marketplaceProvider.notifier).loadBusinesses();
       },
       child: ListView.builder(
-        padding: const EdgeInsets.all(AppDimensions.spacing16),
+        padding: const EdgeInsets.all(16.0),
         itemCount: state.businesses.length,
         itemBuilder: (context, index) {
           final business = state.businesses[index];
           return Padding(
-            padding: const EdgeInsets.only(bottom: AppDimensions.spacing16),
+            padding: const EdgeInsets.only(bottom: 16.0),
             child: BusinessCard(
               business: business,
               onTap: () {
@@ -214,21 +213,21 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
           Icon(
             icon,
             size: 64,
-            color: AppColors.text400,
+            color: AppColors.textQuaternary,
           ),
-          const SizedBox(height: AppDimensions.spacing16),
+          const SizedBox(height: 16.0),
           Text(
             title,
             style: AppTypography.titleLarge.copyWith(
-              color: AppColors.text600,
+              color: AppColors.textTertiary,
               fontWeight: AppTypography.semibold,
             ),
           ),
-          const SizedBox(height: AppDimensions.spacing8),
+          const SizedBox(height: 8.0),
           Text(
             subtitle,
             style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.text500,
+              color: AppColors.textTertiary,
             ),
             textAlign: TextAlign.center,
           ),

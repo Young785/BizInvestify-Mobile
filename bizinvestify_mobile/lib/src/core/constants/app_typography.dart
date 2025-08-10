@@ -19,7 +19,7 @@ class AppTypography {
     fontSize: 64,
     fontWeight: bold,
     height: 1.1,
-    color: AppColors.text800,
+    color: AppColors.textPrimary,
   );
 
   static const TextStyle displayMedium = TextStyle(
@@ -27,7 +27,7 @@ class AppTypography {
     fontSize: 48,
     fontWeight: bold,
     height: 1.2,
-    color: AppColors.text800,
+    color: AppColors.textPrimary,
   );
 
   static const TextStyle displaySmall = TextStyle(
@@ -35,7 +35,7 @@ class AppTypography {
     fontSize: 40,
     fontWeight: bold,
     height: 1.2,
-    color: AppColors.text800,
+    color: AppColors.textPrimary,
   );
 
   // Headline Text Styles
@@ -44,7 +44,7 @@ class AppTypography {
     fontSize: 32,
     fontWeight: bold,
     height: 1.3,
-    color: AppColors.text800,
+    color: AppColors.textPrimary,
   );
 
   static const TextStyle headlineMedium = TextStyle(
@@ -52,7 +52,7 @@ class AppTypography {
     fontSize: 28,
     fontWeight: semibold,
     height: 1.3,
-    color: AppColors.text800,
+    color: AppColors.textPrimary,
   );
 
   static const TextStyle headlineSmall = TextStyle(
@@ -60,7 +60,7 @@ class AppTypography {
     fontSize: 24,
     fontWeight: semibold,
     height: 1.4,
-    color: AppColors.text800,
+    color: AppColors.textPrimary,
   );
 
   // Title Text Styles
@@ -69,7 +69,7 @@ class AppTypography {
     fontSize: 22,
     fontWeight: semibold,
     height: 1.4,
-    color: AppColors.text800,
+    color: AppColors.textPrimary,
   );
 
   static const TextStyle titleMedium = TextStyle(
@@ -77,7 +77,7 @@ class AppTypography {
     fontSize: 20,
     fontWeight: medium,
     height: 1.4,
-    color: AppColors.text800,
+    color: AppColors.textPrimary,
   );
 
   static const TextStyle titleSmall = TextStyle(
@@ -85,7 +85,7 @@ class AppTypography {
     fontSize: 18,
     fontWeight: medium,
     height: 1.4,
-    color: AppColors.text800,
+    color: AppColors.textPrimary,
   );
 
   // Body Text Styles
@@ -94,7 +94,7 @@ class AppTypography {
     fontSize: 18,
     fontWeight: regular,
     height: 1.5,
-    color: AppColors.text700,
+    color: AppColors.textSecondary,
   );
 
   static const TextStyle bodyMedium = TextStyle(
@@ -102,7 +102,7 @@ class AppTypography {
     fontSize: 16,
     fontWeight: regular,
     height: 1.5,
-    color: AppColors.text700,
+    color: AppColors.textSecondary,
   );
 
   static const TextStyle bodySmall = TextStyle(
@@ -110,7 +110,7 @@ class AppTypography {
     fontSize: 14,
     fontWeight: regular,
     height: 1.5,
-    color: AppColors.text600,
+    color: AppColors.textTertiary,
   );
 
   // Label Text Styles
@@ -119,7 +119,7 @@ class AppTypography {
     fontSize: 16,
     fontWeight: medium,
     height: 1.4,
-    color: AppColors.text700,
+    color: AppColors.textSecondary,
   );
 
   static const TextStyle labelMedium = TextStyle(
@@ -127,7 +127,7 @@ class AppTypography {
     fontSize: 14,
     fontWeight: medium,
     height: 1.4,
-    color: AppColors.text700,
+    color: AppColors.textSecondary,
   );
 
   static const TextStyle labelSmall = TextStyle(
@@ -135,7 +135,7 @@ class AppTypography {
     fontSize: 12,
     fontWeight: medium,
     height: 1.4,
-    color: AppColors.text600,
+    color: AppColors.textTertiary,
   );
 
   // Caption Text Styles
@@ -144,7 +144,7 @@ class AppTypography {
     fontSize: 14,
     fontWeight: regular,
     height: 1.4,
-    color: AppColors.text500,
+    color: AppColors.textTertiary,
   );
 
   static const TextStyle captionMedium = TextStyle(
@@ -152,7 +152,7 @@ class AppTypography {
     fontSize: 12,
     fontWeight: regular,
     height: 1.4,
-    color: AppColors.text500,
+    color: AppColors.textTertiary,
   );
 
   static const TextStyle captionSmall = TextStyle(
@@ -160,7 +160,7 @@ class AppTypography {
     fontSize: 10,
     fontWeight: regular,
     height: 1.4,
-    color: AppColors.text400,
+    color: AppColors.textQuaternary,
   );
 
   // Button Text Styles
@@ -193,7 +193,7 @@ class AppTypography {
     return baseStyle.copyWith(
       foreground: Paint()
         ..shader = const LinearGradient(
-          colors: [AppColors.primary500, AppColors.accent500],
+          colors: [AppColors.primary500, AppColors.secondary500],
         ).createShader(const Rect.fromLTWH(0, 0, 200, 70)),
     );
   }

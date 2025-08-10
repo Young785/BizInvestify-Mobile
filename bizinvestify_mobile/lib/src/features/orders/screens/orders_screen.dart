@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/services/api_service.dart';
 import 'order_details_screen.dart';
 
@@ -42,7 +41,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         title: const Text('My Orders'),
         backgroundColor: Colors.white,

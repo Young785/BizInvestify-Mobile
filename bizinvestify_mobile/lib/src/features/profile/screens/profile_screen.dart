@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../orders/screens/orders_screen.dart';
@@ -19,7 +18,7 @@ class ProfileScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         title: const Text('Profile'),
         backgroundColor: Colors.white,
@@ -36,23 +35,23 @@ class ProfileScreen extends ConsumerWidget {
       body: user == null
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(AppDimensions.spacing16),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
                   // Profile Header
                   _buildProfileHeader(user),
                   
-                  const SizedBox(height: AppDimensions.spacing24),
+                  const SizedBox(height: 24.0),
                   
                   // Profile Stats
                   _buildProfileStats(user),
                   
-                  const SizedBox(height: AppDimensions.spacing24),
+                  const SizedBox(height: 24.0),
                   
                   // Menu Items
                   _buildMenuItems(context, ref),
                   
-                  const SizedBox(height: AppDimensions.spacing32),
+                  const SizedBox(height: 32.0),
                   
                   // Logout Button
                   _buildLogoutButton(context, ref, authState),
@@ -64,10 +63,10 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildProfileHeader(User user) {
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.spacing24),
+      padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
+        borderRadius: BorderRadius.circular(16.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -106,28 +105,28 @@ class ProfileScreen extends ConsumerWidget {
                   ),
           ),
           
-          const SizedBox(height: AppDimensions.spacing16),
+          const SizedBox(height: 16.0),
           
           // Name
           Text(
             user.fullName,
             style: AppTypography.headlineSmall.copyWith(
               fontWeight: AppTypography.bold,
-              color: AppColors.text800,
+              color: AppColors.textPrimary,
             ),
           ),
           
-          const SizedBox(height: AppDimensions.spacing8),
+          const SizedBox(height: 8.0),
           
           // Email
           Text(
             user.email,
             style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.text600,
+              color: AppColors.textTertiary,
             ),
           ),
           
-          const SizedBox(height: AppDimensions.spacing16),
+          const SizedBox(height: 16.0),
           
           // Role Badge
           Container(
@@ -148,7 +147,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           
-          const SizedBox(height: AppDimensions.spacing16),
+          const SizedBox(height: 16.0),
           
           // Verification Status
           Row(
@@ -157,13 +156,13 @@ class ProfileScreen extends ConsumerWidget {
               Icon(
                 user.emailVerified ? Icons.verified : Icons.warning,
                 size: 16,
-                color: user.emailVerified ? AppColors.accent500 : AppColors.warning,
+                color: user.emailVerified ? AppColors.secondary500 : AppColors.warning500
               ),
               const SizedBox(width: 4),
               Text(
                 user.emailVerified ? 'Email Verified' : 'Email Not Verified',
                 style: AppTypography.captionMedium.copyWith(
-                  color: user.emailVerified ? AppColors.accent500 : AppColors.warning,
+                  color: user.emailVerified ? AppColors.secondary500 : AppColors.warning500
                 ),
               ),
             ],
@@ -184,7 +183,7 @@ class ProfileScreen extends ConsumerWidget {
             color: _getKycStatusColor(user.kycStatus),
           ),
         ),
-        const SizedBox(width: AppDimensions.spacing16),
+        const SizedBox(width: 16.0),
         Expanded(
           child: _buildStatCard(
             title: 'Member Since',
@@ -204,10 +203,10 @@ class ProfileScreen extends ConsumerWidget {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.spacing16),
+      padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
+        borderRadius: BorderRadius.circular(16.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -223,20 +222,20 @@ class ProfileScreen extends ConsumerWidget {
             color: color,
             size: 24,
           ),
-          const SizedBox(height: AppDimensions.spacing8),
+          const SizedBox(height: 8.0),
           Text(
             value,
             style: AppTypography.titleSmall.copyWith(
               fontWeight: AppTypography.bold,
-              color: AppColors.text800,
+              color: AppColors.textPrimary,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppDimensions.spacing4),
+          const SizedBox(height: 4.0),
           Text(
             title,
             style: AppTypography.captionSmall.copyWith(
-              color: AppColors.text600,
+              color: AppColors.textTertiary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -369,10 +368,10 @@ class ProfileScreen extends ConsumerWidget {
     required VoidCallback onTap,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: AppDimensions.spacing12),
+      margin: const EdgeInsets.only(bottom: 12.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
+        borderRadius: BorderRadius.circular(16.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -398,18 +397,18 @@ class ProfileScreen extends ConsumerWidget {
           title,
           style: AppTypography.titleSmall.copyWith(
             fontWeight: AppTypography.semibold,
-            color: AppColors.text800,
+            color: AppColors.textPrimary,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: AppTypography.bodySmall.copyWith(
-            color: AppColors.text600,
+            color: AppColors.textTertiary,
           ),
         ),
         trailing: const Icon(
           Icons.chevron_right,
-          color: AppColors.text400,
+          color: AppColors.textQuaternary,
         ),
         onTap: onTap,
       ),
@@ -471,24 +470,24 @@ class ProfileScreen extends ConsumerWidget {
       case 'admin':
         return Colors.red;
       case 'seller':
-        return AppColors.accent500;
+        return AppColors.secondary500;
       case 'buyer':
         return AppColors.primary500;
       default:
-        return AppColors.text600;
+        return AppColors.textTertiary;
     }
   }
 
   Color _getKycStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'verified':
-        return AppColors.accent500;
+        return AppColors.secondary500;
       case 'pending':
-        return AppColors.warning;
+        return AppColors.warning500;
       case 'rejected':
-        return AppColors.error;
+        return AppColors.error500;
       default:
-        return AppColors.text600;
+        return AppColors.textTertiary;
     }
   }
 

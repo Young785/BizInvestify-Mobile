@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../onboarding/screens/onboarding_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -86,13 +85,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.primary500, AppColors.accent500],
+            colors: [AppColors.primary500, AppColors.secondary500],
           ),
         ),
         child: SafeArea(

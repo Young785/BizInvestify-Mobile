@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/services/api_service.dart';
 import '../../marketplace/widgets/payment_sheet.dart';
 import 'package:flutter/services.dart';
@@ -147,7 +146,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         title: const Text('Wallet'),
         backgroundColor: Colors.white,
@@ -207,7 +206,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary500, AppColors.accent500],
+          colors: [AppColors.primary500, AppColors.secondary500],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -294,7 +293,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     }
                   },
                   icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('Top Up'),
+                  labelText: const Text('Top Up'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -306,7 +305,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                   ),
                   onPressed: _requestWithdraw,
                   icon: const Icon(Icons.arrow_downward),
-                  label: const Text('Withdraw'),
+                  labelText: const Text('Withdraw'),
                 ),
               ),
             ],

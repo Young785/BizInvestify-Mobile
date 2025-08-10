@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/services/websocket_service.dart';
 import '../providers/messaging_provider.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -439,7 +438,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const SizedBox(width: 8),
              CircleAvatar(
               radius: 16,
-              backgroundColor: AppColors.accent500,
+              backgroundColor: AppColors.secondary500,
               backgroundImage: (ref.watch(userProvider))?.profilePicture != null
                   ? NetworkImage(ref.watch(userProvider)!.profilePicture!)
                   : null,

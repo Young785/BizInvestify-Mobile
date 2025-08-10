@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 
 /// Primary Button Widget
 /// Styled button with loading state and proper theming
@@ -21,7 +20,7 @@ class PrimaryButton extends StatelessWidget {
     required this.child,
     this.isLoading = false,
     this.width,
-    this.height = AppDimensions.buttonHeightMedium,
+    this.height = 48.0,
     this.backgroundColor,
     this.textColor,
     this.isFullWidth = false,
@@ -37,14 +36,14 @@ class PrimaryButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor ?? AppColors.primary500,
           foregroundColor: textColor ?? Colors.white,
-          elevation: AppDimensions.cardElevationSmall,
+          elevation: 2.0,
           shadowColor: AppColors.shadowPrimary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
+            borderRadius: BorderRadius.circular(12.0),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.buttonPaddingHorizontal,
-            vertical: AppDimensions.buttonPaddingVertical,
+            horizontal: 24.0,
+            vertical: 16.0,
           ),
         ),
         child: isLoading
@@ -82,7 +81,7 @@ class SecondaryButton extends StatelessWidget {
     required this.child,
     this.isLoading = false,
     this.width,
-    this.height = AppDimensions.buttonHeightMedium,
+    this.height = 48.0,
     this.borderColor,
     this.textColor,
     this.isFullWidth = false,
@@ -99,14 +98,14 @@ class SecondaryButton extends StatelessWidget {
           foregroundColor: textColor ?? AppColors.primary500,
           side: BorderSide(
             color: borderColor ?? AppColors.primary500,
-            width: AppDimensions.borderWidthThin,
+            width: 0.5,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
+            borderRadius: BorderRadius.circular(12.0),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.buttonPaddingHorizontal,
-            vertical: AppDimensions.buttonPaddingVertical,
+            horizontal: 24.0,
+            vertical: 16.0,
           ),
         ),
         child: isLoading
@@ -143,7 +142,7 @@ class TextButtonWidget extends StatelessWidget {
     required this.child,
     this.isLoading = false,
     this.width,
-    this.height = AppDimensions.buttonHeightMedium,
+    this.height = 48.0,
     this.textColor,
     this.isFullWidth = false,
   });
@@ -158,11 +157,11 @@ class TextButtonWidget extends StatelessWidget {
         style: TextButton.styleFrom(
           foregroundColor: textColor ?? AppColors.primary500,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
+            borderRadius: BorderRadius.circular(12.0),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.buttonPaddingHorizontal,
-            vertical: AppDimensions.buttonPaddingVertical,
+            horizontal: 24.0,
+            vertical: 16.0,
           ),
         ),
         child: isLoading
@@ -196,7 +195,7 @@ class IconButtonWidget extends StatelessWidget {
     super.key,
     required this.onPressed,
     required this.icon,
-    this.size = AppDimensions.iconSizeMedium,
+    this.size = 24.0,
     this.backgroundColor,
     this.iconColor,
     this.elevation,

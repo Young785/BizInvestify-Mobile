@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../providers/messaging_provider.dart';
 import '../widgets/conversation_tile.dart';
 import '../models/conversation_model.dart';
@@ -31,7 +30,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     final messagingState = ref.watch(messagingProvider);
     
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         title: const Text('Messages'),
         backgroundColor: Colors.white,
@@ -139,7 +138,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
               // TODO: Navigate to new conversation screen
             },
             icon: const Icon(Icons.add),
-            label: const Text('Start New Chat'),
+            labelText: const Text('Start New Chat'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary500,
               foregroundColor: Colors.white,

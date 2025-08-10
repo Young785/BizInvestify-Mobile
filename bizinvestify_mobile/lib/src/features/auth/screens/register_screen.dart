@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../../shared/widgets/inputs/custom_text_field.dart';
 import '../providers/auth_provider.dart';
@@ -43,7 +42,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final authState = ref.watch(authProvider);
     
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         title: const Text('Create Account'),
         backgroundColor: Colors.transparent,
@@ -51,7 +50,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDimensions.containerPaddingMobile),
+          padding: const EdgeInsets.all(16.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -68,7 +67,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         height: 60,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [AppColors.primary500, AppColors.accent500],
+                            colors: [AppColors.primary500, AppColors.secondary500],
                           ),
                           borderRadius: BorderRadius.circular(15),
                         ),
@@ -89,7 +88,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Text(
                         'Create your account to get started',
                         style: AppTypography.bodyLarge.copyWith(
-                          color: AppColors.text600,
+                          color: AppColors.textTertiary,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -105,8 +104,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Expanded(
                       child: CustomTextField(
                         controller: _firstNameController,
-                        label: 'First Name',
-                        hint: 'Enter your first name',
+                        labelText: 'First Name',
+                        hintText: 'Enter your first name',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'First name is required';
@@ -119,8 +118,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Expanded(
                       child: CustomTextField(
                         controller: _lastNameController,
-                        label: 'Last Name',
-                        hint: 'Enter your last name',
+                        labelText: 'Last Name',
+                        hintText: 'Enter your last name',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Last name is required';
@@ -137,12 +136,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Email Field
                 CustomTextField(
                   controller: _emailController,
-                  label: 'Email Address',
-                  hint: 'Enter your email',
+                  labelText: 'Email Address',
+                  hintText: 'Enter your email',
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(
                     Icons.email_outlined,
-                    color: AppColors.text500,
+                    color: AppColors.textTertiary,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -160,12 +159,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Phone Field
                 CustomTextField(
                   controller: _phoneController,
-                  label: 'Phone Number (Optional)',
-                  hint: 'Enter your phone number',
+                  labelText: 'Phone Number (Optional)',
+                  hintText: 'Enter your phone number',
                   keyboardType: TextInputType.phone,
                   prefixIcon: const Icon(
                     Icons.phone_outlined,
-                    color: AppColors.text500,
+                    color: AppColors.textTertiary,
                   ),
                 ),
                 
@@ -178,7 +177,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Text(
                       'I want to',
                       style: AppTypography.labelMedium.copyWith(
-                        color: AppColors.text700,
+                        color: AppColors.textSecondary,
                         fontWeight: AppTypography.medium,
                       ),
                     ),
@@ -186,7 +185,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
+                        borderRadius: BorderRadius.circular(12.0),
                         border: Border.all(color: Colors.grey[300]!),
                       ),
                       child: Column(
@@ -226,17 +225,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Password Field
                 CustomTextField(
                   controller: _passwordController,
-                  label: 'Password',
-                  hint: 'Create a password',
+                  labelText: 'Password',
+                  hintText: 'Create a password',
                   obscureText: _obscurePassword,
                   prefixIcon: const Icon(
                     Icons.lock_outlined,
-                    color: AppColors.text500,
+                    color: AppColors.textTertiary,
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                      color: AppColors.text500,
+                      color: AppColors.textTertiary,
                     ),
                     onPressed: () {
                       setState(() {
@@ -260,17 +259,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Confirm Password Field
                 CustomTextField(
                   controller: _confirmPasswordController,
-                  label: 'Confirm Password',
-                  hint: 'Confirm your password',
+                  labelText: 'Confirm Password',
+                  hintText: 'Confirm your password',
                   obscureText: _obscureConfirmPassword,
                   prefixIcon: const Icon(
                     Icons.lock_outlined,
-                    color: AppColors.text500,
+                    color: AppColors.textTertiary,
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                      color: AppColors.text500,
+                      color: AppColors.textTertiary,
                     ),
                     onPressed: () {
                       setState(() {
@@ -334,7 +333,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Text(
                       'Already have an account? ',
                       style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.text600,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                     TextButton(

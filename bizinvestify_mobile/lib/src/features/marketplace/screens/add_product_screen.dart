@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/services/api_service.dart';
 
@@ -68,9 +67,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         backgroundColor: Colors.white,
         elevation: 1,
       ),
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.spacing16),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -78,19 +77,19 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             children: [
               _textField(
                 controller: _nameController,
-                label: 'Product Name',
+                labelText: 'Product Name',
                 validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
               ),
-              const SizedBox(height: AppDimensions.spacing12),
+              const SizedBox(height: 12.0),
               _textField(
                 controller: _descriptionController,
-                label: 'Description',
+                labelText: 'Description',
                 maxLines: 4,
               ),
-              const SizedBox(height: AppDimensions.spacing12),
+              const SizedBox(height: 12.0),
               _textField(
                 controller: _priceController,
-                label: 'Price',
+                labelText: 'Price',
                 keyboardType: TextInputType.number,
                 validator: (v) {
                   final t = v?.trim();
@@ -99,22 +98,22 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: AppDimensions.spacing12),
+              const SizedBox(height: 12.0),
               _textField(
                 controller: _categoryController,
-                label: 'Category (optional)',
+                labelText: 'Category (optional)',
               ),
-              const SizedBox(height: AppDimensions.spacing16),
+              const SizedBox(height: 16.0),
               Text('Image (optional)', style: AppTypography.titleSmall),
-              const SizedBox(height: AppDimensions.spacing8),
+              const SizedBox(height: 8.0),
               Row(
                 children: [
                   ElevatedButton.icon(
                     onPressed: _submitting ? null : _pickImage,
                     icon: const Icon(Icons.photo),
-                    label: const Text('Choose Image'),
+                    labelText: const Text('Choose Image'),
                   ),
-                  const SizedBox(width: AppDimensions.spacing12),
+                  const SizedBox(width: 12.0),
                   if (_image != null)
                     Expanded(
                       child: ClipRRect(
@@ -124,7 +123,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                     ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.spacing24),
+              const SizedBox(height: 24.0),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

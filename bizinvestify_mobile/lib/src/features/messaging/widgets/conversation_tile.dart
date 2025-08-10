@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../models/conversation_model.dart';
 
 class ConversationTile extends StatelessWidget {
@@ -20,10 +19,10 @@ class ConversationTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(AppDimensions.spacing16),
+        padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(16.0),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -37,7 +36,7 @@ class ConversationTile extends StatelessWidget {
             // Avatar
             _buildAvatar(),
             
-            const SizedBox(width: AppDimensions.spacing12),
+            const SizedBox(width: 12.0),
             
             // Content
             Expanded(
@@ -52,7 +51,7 @@ class ConversationTile extends StatelessWidget {
                           conversation.recipient.name,
                           style: AppTypography.titleSmall.copyWith(
                             fontWeight: AppTypography.semibold,
-                            color: AppColors.text800,
+                            color: AppColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -63,7 +62,7 @@ class ConversationTile extends StatelessWidget {
                       Text(
                          _formatTime(conversation.updatedAt),
                         style: AppTypography.captionSmall.copyWith(
-                          color: AppColors.text500,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],
@@ -79,8 +78,8 @@ class ConversationTile extends StatelessWidget {
                           conversation.lastMessage ?? 'No messages yet',
                           style: AppTypography.bodySmall.copyWith(
                             color: conversation.unreadCount > 0
-                                ? AppColors.text800
-                                : AppColors.text600,
+                                ? AppColors.textPrimary
+                                : AppColors.textTertiary,
                             fontWeight: conversation.unreadCount > 0
                                 ? AppTypography.medium
                                 : AppTypography.regular,

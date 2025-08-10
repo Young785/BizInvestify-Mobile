@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
+
 import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../auth/screens/login_screen.dart';
 
@@ -30,7 +30,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       subtitle: 'List your products or entire business for sale',
       description: 'Create professional listings with detailed information, photos, and pricing. Reach thousands of potential buyers.',
       icon: Icons.store,
-      color: AppColors.accent500,
+      color: AppColors.secondary500,
     ),
     OnboardingPage(
       title: 'Secure Investment',
@@ -44,7 +44,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       subtitle: 'Chat directly with buyers and investors',
       description: 'Built-in messaging system lets you communicate securely with potential partners. Close deals faster.',
       icon: Icons.chat_bubble,
-      color: AppColors.accent600,
+      color: AppColors.secondary600,
     ),
   ];
 
@@ -85,7 +85,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: Column(
           children: [
@@ -93,13 +93,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Align(
               alignment: Alignment.topRight,
               child: Padding(
-                padding: const EdgeInsets.all(AppDimensions.spacing16),
+                padding: const EdgeInsets.all(16.0),
                 child: TextButton(
                   onPressed: _skipOnboarding,
                   child: Text(
                     'Skip',
                     style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.text600,
+                      color: AppColors.textTertiary,
                       fontWeight: AppTypography.medium,
                     ),
                   ),
@@ -125,7 +125,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             
             // Bottom Section
             Container(
-              padding: const EdgeInsets.all(AppDimensions.spacing24),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
                   // Page Indicators
@@ -141,14 +141,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         decoration: BoxDecoration(
                           color: _currentPage == index
                               ? AppColors.primary500
-                              : AppColors.text300,
+                              : AppColors.textQuaternary,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
                   ),
                   
-                  const SizedBox(height: AppDimensions.spacing32),
+                  const SizedBox(height: 32.0),
                   
                   // Action Buttons
                   Row(
@@ -175,7 +175,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                         ),
                       if (_currentPage > 0)
-                        const SizedBox(width: AppDimensions.spacing16),
+                        const SizedBox(width: 16.0),
                       Expanded(
                         flex: 2,
                         child: PrimaryButton(
@@ -199,7 +199,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Widget _buildPage(OnboardingPage page) {
     return Padding(
-      padding: const EdgeInsets.all(AppDimensions.spacing24),
+      padding: const EdgeInsets.all(24.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -218,19 +218,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
           
-          const SizedBox(height: AppDimensions.spacing32),
+          const SizedBox(height: 32.0),
           
           // Title
           Text(
             page.title,
             style: AppTypography.headlineMedium.copyWith(
               fontWeight: AppTypography.bold,
-              color: AppColors.text800,
+              color: AppColors.textPrimary,
             ),
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: AppDimensions.spacing16),
+          const SizedBox(height: 16.0),
           
           // Subtitle
           Text(
@@ -242,13 +242,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: AppDimensions.spacing24),
+          const SizedBox(height: 24.0),
           
           // Description
           Text(
             page.description,
             style: AppTypography.bodyLarge.copyWith(
-              color: AppColors.text600,
+              color: AppColors.textTertiary,
               height: 1.6,
             ),
             textAlign: TextAlign.center,

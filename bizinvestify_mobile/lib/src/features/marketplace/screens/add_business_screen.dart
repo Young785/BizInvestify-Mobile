@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/services/api_service.dart';
 
@@ -56,9 +55,9 @@ class _AddBusinessScreenState extends ConsumerState<AddBusinessScreen> {
         backgroundColor: Colors.white,
         elevation: 1,
       ),
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.spacing16),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -66,49 +65,49 @@ class _AddBusinessScreenState extends ConsumerState<AddBusinessScreen> {
             children: [
               _textField(
                 controller: _nameController,
-                label: 'Business Name',
+                labelText: 'Business Name',
                 validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
               ),
-              const SizedBox(height: AppDimensions.spacing12),
+              const SizedBox(height: 12.0),
               _textField(
                 controller: _descriptionController,
-                label: 'Description',
+                labelText: 'Description',
                 maxLines: 4,
               ),
-              const SizedBox(height: AppDimensions.spacing12),
+              const SizedBox(height: 12.0),
               _textField(
                 controller: _industryController,
-                label: 'Industry',
+                labelText: 'Industry',
                 validator: (v) => v == null || v.trim().isEmpty ? 'Industry is required' : null,
               ),
-              const SizedBox(height: AppDimensions.spacing12),
+              const SizedBox(height: 12.0),
               _textField(
                 controller: _valuationController,
-                label: 'Valuation',
+                labelText: 'Valuation',
                 keyboardType: TextInputType.number,
                 validator: _numberValidator,
               ),
-              const SizedBox(height: AppDimensions.spacing12),
+              const SizedBox(height: 12.0),
               _textField(
                 controller: _fundingGoalController,
-                label: 'Funding Goal',
+                labelText: 'Funding Goal',
                 keyboardType: TextInputType.number,
                 validator: _numberValidator,
               ),
-              const SizedBox(height: AppDimensions.spacing12),
+              const SizedBox(height: 12.0),
               _textField(
                 controller: _equityController,
-                label: 'Equity Offered (%)',
+                labelText: 'Equity Offered (%)',
                 keyboardType: TextInputType.number,
                 validator: _numberValidator,
               ),
-              const SizedBox(height: AppDimensions.spacing24),
+              const SizedBox(height: 24.0),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _submitting ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent500,
+                    backgroundColor: AppColors.secondary500,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),

@@ -46,7 +46,7 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen> {
         backgroundColor: Colors.white,
         elevation: 1,
       ),
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

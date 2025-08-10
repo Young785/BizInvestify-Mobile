@@ -40,9 +40,9 @@ class AppTheme {
         onSecondaryContainer: AppColors.secondary900,
         
         // Tertiary colors
-        tertiary: AppColors.accent500,
+        tertiary: AppColors.secondary500,
         onTertiary: AppColors.textInverse,
-        tertiaryContainer: AppColors.accent50,
+        tertiaryContainer: AppColors.secondary50,
         onTertiaryContainer: AppColors.accent900,
         
         // Error colors
@@ -483,10 +483,10 @@ class AppTheme {
         onSecondaryContainer: AppColors.secondary100,
         
         // Tertiary colors
-        tertiary: AppColors.accent400,
+        tertiary: AppColors.secondary400,
         onTertiary: AppColors.textPrimary,
         tertiaryContainer: AppColors.accent800,
-        onTertiaryContainer: AppColors.accent100,
+        onTertiaryContainer: AppColors.secondary100,
         
         // Error colors
         error: AppColors.error500,

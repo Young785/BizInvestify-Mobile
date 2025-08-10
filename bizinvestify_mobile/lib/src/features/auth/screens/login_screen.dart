@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../../shared/widgets/inputs/custom_text_field.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
@@ -34,10 +33,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
     
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDimensions.containerPaddingMobile),
+          padding: const EdgeInsets.all(16.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -54,7 +53,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         height: 80,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [AppColors.primary500, AppColors.accent500],
+                            colors: [AppColors.primary500, AppColors.secondary500],
                           ),
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -67,7 +66,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 16),
                       ShaderMask(
                         shaderCallback: (bounds) => const LinearGradient(
-                          colors: [AppColors.primary500, AppColors.accent500],
+                          colors: [AppColors.primary500, AppColors.secondary500],
                         ).createShader(bounds),
                         child: Text(
                           'BizInvestify',
@@ -81,7 +80,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Text(
                         'Welcome back to your business dashboard',
                         style: AppTypography.bodyLarge.copyWith(
-                          color: AppColors.text600,
+                          color: AppColors.textTertiary,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -94,12 +93,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Email Field
                 CustomTextField(
                   controller: _emailController,
-                  label: 'Email Address',
-                  hint: 'Enter your email',
+                  labelText: 'Email Address',
+                  hintText: 'Enter your email',
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(
                     Icons.email_outlined,
-                    color: AppColors.text500,
+                    color: AppColors.textTertiary,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -117,17 +116,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Password Field
                 CustomTextField(
                   controller: _passwordController,
-                  label: 'Password',
-                  hint: 'Enter your password',
+                  labelText: 'Password',
+                  hintText: 'Enter your password',
                   obscureText: _obscurePassword,
                   prefixIcon: const Icon(
                     Icons.lock_outlined,
-                    color: AppColors.text500,
+                    color: AppColors.textTertiary,
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                      color: AppColors.text500,
+                      color: AppColors.textTertiary,
                     ),
                     onPressed: () {
                       setState(() {
@@ -213,7 +212,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const Text(
                   'Or continue with',
                   style: TextStyle(
-                    color: AppColors.text500,
+                    color: AppColors.textTertiary,
                     fontSize: 14,
                   ),
                   textAlign: TextAlign.center,
@@ -229,7 +228,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           // Google login
                         },
                         icon: const Icon(Icons.g_mobiledata, size: 24),
-                        label: const Text('Google'),
+                        labelText: const Text('Google'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -242,7 +241,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           // Apple login
                         },
                         icon: const Icon(Icons.apple, size: 24),
-                        label: const Text('Apple'),
+                        labelText: const Text('Apple'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),

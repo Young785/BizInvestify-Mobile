@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../providers/marketplace_provider.dart';
 import '../screens/product_details_screen.dart';
 
@@ -56,21 +55,21 @@ class ProductCard extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(AppDimensions.borderRadiusLarge),
-            topRight: Radius.circular(AppDimensions.borderRadiusLarge),
+            topLeft: Radius.circular(16.0),
+            topRight: Radius.circular(16.0),
           ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(AppDimensions.borderRadiusLarge),
-            topRight: Radius.circular(AppDimensions.borderRadiusLarge),
+            topLeft: Radius.circular(16.0),
+            topRight: Radius.circular(16.0),
           ),
           child: product.images.isNotEmpty
               ? CachedNetworkImage(
                   imageUrl: product.images.first,
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
-                    color: AppColors.background300,
+                    color: AppColors.surfaceBorder,
                     child: const Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
@@ -78,18 +77,18 @@ class ProductCard extends StatelessWidget {
                     ),
                   ),
                   errorWidget: (context, url, error) => Container(
-                    color: AppColors.background300,
+                    color: AppColors.surfaceBorder,
                     child: const Icon(
                       Icons.image_not_supported,
-                      color: AppColors.text400,
+                      color: AppColors.textQuaternary,
                     ),
                   ),
                 )
               : Container(
-                  color: AppColors.background300,
+                  color: AppColors.surfaceBorder,
                   child: const Icon(
                     Icons.image_not_supported,
-                    color: AppColors.text400,
+                    color: AppColors.textQuaternary,
                   ),
                 ),
         ),
@@ -101,7 +100,7 @@ class ProductCard extends StatelessWidget {
     return Expanded(
       flex: 2,
       child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.spacing12),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -110,7 +109,7 @@ class ProductCard extends StatelessWidget {
               product.name,
               style: AppTypography.titleSmall.copyWith(
                 fontWeight: AppTypography.semibold,
-                color: AppColors.text800,
+                color: AppColors.textPrimary,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -148,7 +147,7 @@ class ProductCard extends StatelessWidget {
                   '\$${product.price.toStringAsFixed(2)}',
                   style: AppTypography.titleMedium.copyWith(
                     fontWeight: AppTypography.bold,
-                    color: AppColors.accent500,
+                    color: AppColors.secondary500,
                   ),
                 ),
 
@@ -157,7 +156,7 @@ class ProductCard extends StatelessWidget {
                   child: Text(
                     product.sellerName,
                     style: AppTypography.captionSmall.copyWith(
-                      color: AppColors.text500,
+                      color: AppColors.textTertiary,
                     ),
                     textAlign: TextAlign.end,
                     maxLines: 1,

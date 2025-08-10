@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../models/product_model.dart' as product_model;
 import '../providers/marketplace_provider.dart' as marketplace_provider;
 import '../../auth/providers/auth_provider.dart';
@@ -51,7 +50,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
     final currentUser = ref.watch(userProvider);
     
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundSecondary,
       body: _product == null
           ? const Center(child: CircularProgressIndicator())
           : CustomScrollView(
@@ -107,7 +106,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
                                 _product!.name,
                                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.text800,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -124,13 +123,13 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: AppColors.accent500.withOpacity(0.1),
+                                      color: AppColors.secondary500.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
                                       _product!.category,
                                       style: TextStyle(
-                                        color: AppColors.accent500,
+                                        color: AppColors.secondary500,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -481,7 +480,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
       child: Row(
         children: [
           Text(
-            '$label:',
+            '$labelText:',
             style: TextStyle(
               fontWeight: FontWeight.w500,
               color: Colors.grey[700],
@@ -619,7 +618,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
                   // TODO: Navigate to chat with seller
                 },
                 icon: const Icon(Icons.message),
-                label: const Text('Message Seller'),
+                labelText: const Text('Message Seller'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey[100],
                   foregroundColor: Colors.black87,
