@@ -1,53 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_typography.dart';
 import '../constants/app_dimensions.dart';
 
-/// BizInvestify App Theme
-/// Material 3 design system with custom brand colors
+/// BizInvestify Professional App Theme
+/// Modern Material 3 design system for production fintech app
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary500,
+      fontFamily: AppTypography.fontFamily,
+      
+      // Modern Color Scheme (non-const to allow dynamic shadows)
+      colorScheme: ColorScheme.light(
         brightness: Brightness.light,
         primary: AppColors.primary500,
-        secondary: AppColors.accent500,
-        surface: AppColors.background50,
-        background: AppColors.background200,
+        onPrimary: AppColors.white,
+        primaryContainer: AppColors.primary100,
+        onPrimaryContainer: AppColors.primary900,
+        secondary: AppColors.success500,
+        onSecondary: AppColors.white,
+        secondaryContainer: AppColors.success100,
+        onSecondaryContainer: AppColors.success900,
+        tertiary: AppColors.purple500,
+        onTertiary: AppColors.white,
+        tertiaryContainer: AppColors.purple100,
+        onTertiaryContainer: AppColors.purple900,
         error: AppColors.error,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: AppColors.text800,
-        onBackground: AppColors.text800,
-        onError: Colors.white,
+        onError: AppColors.white,
+        errorContainer: Color(0xFFFFEBEE),
+        onErrorContainer: Color(0xFFBA1A1A),
+        background: AppColors.backgroundPrimary,
+        onBackground: AppColors.textPrimary,
+        surface: AppColors.backgroundSecondary,
+        onSurface: AppColors.textPrimary,
+        surfaceVariant: AppColors.backgroundTertiary,
+        onSurfaceVariant: AppColors.textSecondary,
+        outline: AppColors.borderPrimary,
+        outlineVariant: AppColors.borderSecondary,
+        shadow: AppColors.shadowNeutral,
+        scrim: AppColors.overlayMedium,
+        inverseSurface: AppColors.neutral800,
+        onInverseSurface: AppColors.neutral100,
+        inversePrimary: AppColors.primary300,
+        surfaceTint: AppColors.primary500,
       ),
+      
+      scaffoldBackgroundColor: AppColors.backgroundPrimary,
       textTheme: AppTypography.textTheme,
       
-      // App Bar Theme
+      // App Bar Theme - Modern and clean
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.text800,
+        backgroundColor: AppColors.backgroundSecondary,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        scrolledUnderElevation: 1,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: AppColors.shadowSoft,
         centerTitle: false,
-        titleTextStyle: AppTypography.titleMedium.copyWith(
-          color: AppColors.text800,
-          fontWeight: AppTypography.semibold,
+        titleSpacing: AppDimensions.containerPaddingMobile,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
         ),
-        iconTheme: const IconThemeData(
-          color: AppColors.text700,
-          size: AppDimensions.iconSizeMedium,
+        titleTextStyle: AppTypography.appBarTitle,
+        iconTheme: IconThemeData(
+          color: AppColors.textSecondary,
+          size: AppDimensions.iconSizeLarge,
+        ),
+        actionsIconTheme: IconThemeData(
+          color: AppColors.textSecondary,
+          size: AppDimensions.iconSizeLarge,
         ),
       ),
       
-      // Elevated Button Theme
+      // Elevated Button Theme - Modern and professional
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary500,
-          foregroundColor: Colors.white,
-          elevation: AppDimensions.cardElevationSmall,
-          shadowColor: AppColors.shadowPrimary,
+          foregroundColor: AppColors.white,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
           ),
@@ -57,14 +93,33 @@ class AppTheme {
           ),
           minimumSize: Size(0, AppDimensions.buttonHeightMedium),
           textStyle: AppTypography.buttonMedium,
+        ).copyWith(
+          overlayColor: MaterialStateProperty.resolveWith<Color?>(
+            (Set<MaterialState> states) {
+              if (states.contains(MaterialState.pressed)) {
+                return AppColors.white.withOpacity(0.12);
+              }
+              if (states.contains(MaterialState.hovered)) {
+                return AppColors.white.withOpacity(0.08);
+              }
+              if (states.contains(MaterialState.focused)) {
+                return AppColors.white.withOpacity(0.12);
+              }
+              return null;
+            },
+          ),
         ),
       ),
       
-      // Outlined Button Theme
+      // Outlined Button Theme - Professional styling
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary500,
-          side: const BorderSide(color: AppColors.primary500),
+          backgroundColor: Colors.transparent,
+          side: const BorderSide(
+            color: AppColors.primary500,
+            width: 1.5,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
           ),
@@ -76,106 +131,172 @@ class AppTheme {
           textStyle: AppTypography.buttonMedium.copyWith(
             color: AppColors.primary500,
           ),
+        ).copyWith(
+          overlayColor: MaterialStateProperty.resolveWith<Color?>(
+            (Set<MaterialState> states) {
+              if (states.contains(MaterialState.pressed)) {
+                return AppColors.primary500.withOpacity(0.08);
+              }
+              if (states.contains(MaterialState.hovered)) {
+                return AppColors.primary500.withOpacity(0.04);
+              }
+              return null;
+            },
+          ),
         ),
       ),
       
-      // Text Button Theme
+      // Text Button Theme - Clean and minimal
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary500,
+          backgroundColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
+            borderRadius: BorderRadius.circular(AppDimensions.borderRadiusSmall),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.buttonPaddingHorizontal,
-            vertical: AppDimensions.buttonPaddingVertical,
+            horizontal: AppDimensions.spacing20,
+            vertical: AppDimensions.spacing12,
           ),
-          minimumSize: Size(0, AppDimensions.buttonHeightMedium),
+          minimumSize: Size(0, AppDimensions.buttonHeightSmall),
           textStyle: AppTypography.buttonMedium.copyWith(
             color: AppColors.primary500,
+          ),
+        ).copyWith(
+          overlayColor: MaterialStateProperty.resolveWith<Color?>(
+            (Set<MaterialState> states) {
+              if (states.contains(MaterialState.pressed)) {
+                return AppColors.primary500.withOpacity(0.08);
+              }
+              if (states.contains(MaterialState.hovered)) {
+                return AppColors.primary500.withOpacity(0.04);
+              }
+              return null;
+            },
           ),
         ),
       ),
       
-      // Input Decoration Theme
+      // Input Decoration Theme - Modern and professional
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.backgroundSecondary,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.spacing20,
+          vertical: AppDimensions.spacing16,
+        ),
+        
+        // Border styles
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: const BorderSide(
+            color: AppColors.borderPrimary,
+            width: 1,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: const BorderSide(
+            color: AppColors.borderPrimary,
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
           borderSide: const BorderSide(
-            color: AppColors.primary500,
-            width: AppDimensions.borderWidthMedium,
+            color: AppColors.borderFocus,
+            width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: const BorderSide(
+            color: AppColors.error,
+            width: 1,
+          ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
           borderSide: const BorderSide(
             color: AppColors.error,
-            width: AppDimensions.borderWidthMedium,
+            width: 2,
           ),
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.spacing16,
-          vertical: AppDimensions.spacing16,
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
+          borderSide: const BorderSide(
+            color: AppColors.neutral300,
+            width: 1,
+          ),
         ),
-        labelStyle: AppTypography.labelMedium.copyWith(
-          color: AppColors.text500,
+        
+        // Text styles
+        labelStyle: AppTypography.inputLabel,
+        floatingLabelStyle: AppTypography.inputLabel.copyWith(
+          color: AppColors.borderFocus,
         ),
-        hintStyle: AppTypography.bodyMedium.copyWith(
-          color: AppColors.text400,
+        hintStyle: AppTypography.inputHint,
+        helperStyle: AppTypography.bodySmall.copyWith(
+          color: AppColors.textTertiary,
         ),
-        errorStyle: AppTypography.captionMedium.copyWith(
-          color: AppColors.error,
-        ),
+        errorStyle: AppTypography.errorText,
       ),
       
-      // Card Theme
+      // Card Theme - Modern with subtle borders
       cardTheme: CardThemeData(
-        elevation: AppDimensions.cardElevationMedium,
-        shadowColor: AppColors.shadowMedium,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
+          side: const BorderSide(
+            color: AppColors.borderPrimary,
+            width: 1,
+          ),
         ),
-        color: Colors.white,
-        margin: const EdgeInsets.all(AppDimensions.spacing8),
+        color: AppColors.backgroundSecondary,
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.containerPaddingMobile,
+          vertical: AppDimensions.spacing8,
+        ),
       ),
       
-      // Bottom Navigation Bar Theme
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
+      // Bottom Navigation Bar Theme - Modern and clean
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: AppColors.backgroundSecondary,
         selectedItemColor: AppColors.primary500,
-        unselectedItemColor: AppColors.text400,
+        unselectedItemColor: AppColors.textTertiary,
         type: BottomNavigationBarType.fixed,
-        elevation: AppDimensions.cardElevationLarge,
-        selectedLabelStyle: TextStyle(
-          fontSize: 12,
+        elevation: 8,
+        selectedLabelStyle: AppTypography.bottomNavLabel.copyWith(
+          color: AppColors.primary500,
+          fontWeight: AppTypography.semibold,
+        ),
+        unselectedLabelStyle: AppTypography.bottomNavLabel.copyWith(
+          color: AppColors.textTertiary,
           fontWeight: AppTypography.medium,
         ),
-        unselectedLabelStyle: TextStyle(
-          fontSize: 12,
-          fontWeight: AppTypography.regular,
+        selectedIconTheme: IconThemeData(
+          color: AppColors.primary500,
+          size: AppDimensions.iconSizeLarge,
+        ),
+        unselectedIconTheme: IconThemeData(
+          color: AppColors.textTertiary,
+          size: AppDimensions.iconSizeLarge,
         ),
       ),
       
-      // Floating Action Button Theme
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      // Floating Action Button Theme - Modern gradient
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.primary500,
-        foregroundColor: Colors.white,
-        elevation: AppDimensions.cardElevationLarge,
-        shape: CircleBorder(),
+        foregroundColor: AppColors.white,
+        elevation: 6,
+        highlightElevation: 8,
+        shape: const CircleBorder(),
+        sizeConstraints: const BoxConstraints.tightFor(
+          width: AppDimensions.spacing64,
+          height: AppDimensions.spacing64,
+        ),
       ),
       
       // Chip Theme

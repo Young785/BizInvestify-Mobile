@@ -4,6 +4,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/buttons/primary_button.dart';
+import '../../../shared/widgets/cards/modern_card.dart';
+import '../../../shared/widgets/navigation/modern_bottom_nav.dart';
 import '../../marketplace/screens/marketplace_screen.dart';
 import '../../messaging/screens/messages_screen.dart';
 import '../../profile/screens/profile_screen.dart';
@@ -52,9 +54,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background200,
+      backgroundColor: AppColors.backgroundPrimary,
       body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: ModernBottomNav(
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {
@@ -62,55 +64,67 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           });
           _refreshBadges();
         },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primary500,
-        unselectedItemColor: AppColors.text400,
-        selectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: AppTypography.medium,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: AppTypography.regular,
-        ),
-        elevation: 8,
         items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
+          const ModernBottomNavItem(
+            icon: Icons.dashboard_outlined,
+            activeIcon: Icons.dashboard,
             label: 'Dashboard',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.store),
+          const ModernBottomNavItem(
+            icon: Icons.store_outlined,
+            activeIcon: Icons.store,
             label: 'Marketplace',
           ),
-          BottomNavigationBarItem(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.message),
-                if (_unreadMessages > 0)
-                  Positioned(
-                    right: -6,
-                    top: -2,
-                    child: _Badge(count: _unreadMessages),
-                  ),
-              ],
-            ),
+          ModernBottomNavItem(
+            icon: Icons.chat_outlined,
+            activeIcon: Icons.chat,
             label: 'Messages',
+            badgeCount: _unreadMessages > 0 ? _unreadMessages : null,
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+          const ModernBottomNavItem(
+            icon: Icons.person_outlined,
+            activeIcon: Icons.person,
             label: 'Profile',
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add new listing
-        },
-        backgroundColor: AppColors.primary500,
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(AppDimensions.spacing32),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadowPrimary,
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NotificationsScreen(),
+              ),
+            );
+          },
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Badge(
+            isLabelVisible: _unreadNotifications > 0,
+            label: Text(
+              '$_unreadNotifications',
+              style: AppTypography.labelSmall.copyWith(
+                color: AppColors.white,
+              ),
+            ),
+            child: const Icon(
+              Icons.notifications_outlined,
+              color: AppColors.white,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -161,205 +175,193 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
     
     return CustomScrollView(
       slivers: [
-        // App Bar
+        // Modern App Bar
         SliverAppBar(
-          expandedHeight: 120,
+          expandedHeight: 140,
           floating: false,
           pinned: true,
-          backgroundColor: AppColors.primary500,
+          backgroundColor: AppColors.backgroundSecondary,
+          elevation: 0,
           flexibleSpace: FlexibleSpaceBar(
             title: Text(
-              'Dashboard',
-              style: AppTypography.headlineSmall.copyWith(
-                color: Colors.white,
-                fontWeight: AppTypography.bold,
+              'Welcome back, User!',
+              style: AppTypography.appBarTitle.copyWith(
+                color: AppColors.textPrimary,
               ),
             ),
+            titlePadding: const EdgeInsets.only(
+              left: AppDimensions.containerPaddingMobile,
+              bottom: AppDimensions.spacing16,
+            ),
             background: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.primary500, AppColors.accent500],
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(AppDimensions.borderRadiusXLarge),
+                  bottomRight: Radius.circular(AppDimensions.borderRadiusXLarge),
+                ),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(AppDimensions.containerPaddingMobile),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome back, User!',
+                      style: AppTypography.headlineMedium.copyWith(
+                        color: AppColors.white,
+                      ),
+                    ),
+                    const SizedBox(height: AppDimensions.spacing8),
+                    Text(
+                      "Here's what's happening with your business today.",
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.white.withOpacity(0.9),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
           actions: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications, color: Colors.white),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-                    );
-                  },
+            Container(
+              margin: const EdgeInsets.only(right: AppDimensions.spacing8),
+              child: IconButton(
+                icon: Icon(
+                  Icons.search,
+                  color: AppColors.white,
+                  size: AppDimensions.iconSizeLarge,
                 ),
-                Positioned(
-                  right: 6,
-                  top: 6,
-                  child: FutureBuilder<int>(
-                    future: apiService.getNotificationUnreadCount(),
-                    builder: (context, snapshot) {
-                      final c = snapshot.data ?? 0;
-                      if (c <= 0) return const SizedBox.shrink();
-                      return _Badge(count: c);
-                    },
-                  ),
-                ),
-              ],
-            ),
-            IconButton(
-              icon: const Icon(Icons.person, color: Colors.white),
-              onPressed: () {
-                // Navigate to profile
-              },
+                onPressed: () {
+                  // Navigate to search
+                },
+              ),
             ),
           ],
         ),
         
-        // Dashboard Content
+                // Dashboard Content
         SliverPadding(
-          padding: const EdgeInsets.all(AppDimensions.spacing16),
+          padding: const EdgeInsets.fromLTRB(
+            AppDimensions.containerPaddingMobile,
+            AppDimensions.spacing24,
+            AppDimensions.containerPaddingMobile,
+            AppDimensions.spacing24,
+          ),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              // Welcome Message
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Colors.white, AppColors.primary50],
+              // Stats Cards
+              if (dashboardState.isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppDimensions.spacing48),
+                    child: CircularProgressIndicator(),
                   ),
-                  borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                )
+              else
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: AppDimensions.spacing16,
+                  mainAxisSpacing: AppDimensions.spacing16,
+                  childAspectRatio: 1.4,
                   children: [
-                                          Text(
-                        'Welcome back, ${analytics != null ? 'User' : 'User'}!',
-                        style: AppTypography.headlineSmall.copyWith(
-                          fontWeight: AppTypography.bold,
-                        ),
-                      ),
-                    const SizedBox(height: AppDimensions.spacing8),
-                    Text(
-                      'Here\'s what\'s happening with your business today.',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.text600,
-                      ),
+                    DashboardCard(
+                      title: 'Total Revenue',
+                      value: '\$${analytics?.totalRevenue.toStringAsFixed(0) ?? '0'}',
+                      icon: Icons.trending_up,
+                      trend: TrendType.up,
+                      trendValue: '+12.5%',
+                      gradient: AppColors.primaryGradient,
+                    ),
+                    DashboardCard(
+                      title: 'Total Products',
+                      value: '${analytics?.totalProducts ?? 0}',
+                      icon: Icons.inventory_2_outlined,
+                      trend: TrendType.up,
+                      trendValue: '+8.2%',
+                      backgroundColor: AppColors.success100,
+                    ),
+                    DashboardCard(
+                      title: 'Active Listings',
+                      value: '${analytics?.activeListings ?? 0}',
+                      icon: Icons.store_outlined,
+                      trend: TrendType.up,
+                      trendValue: '+5.1%',
+                      backgroundColor: AppColors.purple100,
+                    ),
+                    DashboardCard(
+                      title: 'Messages',
+                      value: '${analytics?.unreadMessages ?? 0}',
+                      icon: Icons.chat_outlined,
+                      trend: TrendType.neutral,
+                      trendValue: 'New',
+                      backgroundColor: AppColors.primary100,
                     ),
                   ],
                 ),
-              ),
               
-              const SizedBox(height: AppDimensions.spacing24),
+              const SizedBox(height: AppDimensions.spacing32),
               
-                              // Stats Cards
-                if (dashboardState.isLoading)
-                  const Center(child: CircularProgressIndicator())
-                else
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    crossAxisSpacing: AppDimensions.spacing16,
-                    mainAxisSpacing: AppDimensions.spacing16,
-                    childAspectRatio: 1.6,
-                    children: [
-                      _buildStatsCard(
-                        title: 'Total Revenue',
-                        value: '\$${analytics?.totalRevenue.toStringAsFixed(0) ?? '0'}',
-                        icon: Icons.attach_money,
-                        color: AppColors.accent500,
-                        trend: '+12.5%',
-                        trendUp: true,
-                      ),
-                      _buildStatsCard(
-                        title: 'Total Products',
-                        value: '${analytics?.totalProducts ?? 0}',
-                        icon: Icons.inventory,
-                        color: AppColors.primary500,
-                        trend: '+8.2%',
-                        trendUp: true,
-                      ),
-                      _buildStatsCard(
-                        title: 'Active Listings',
-                        value: '${analytics?.activeListings ?? 0}',
-                        icon: Icons.store,
-                        color: AppColors.accent600,
-                        trend: '+5.1%',
-                        trendUp: true,
-                      ),
-                      _buildStatsCard(
-                        title: 'Messages',
-                        value: '${analytics?.unreadMessages ?? 0}',
-                        icon: Icons.message,
-                        color: AppColors.primary600,
-                        trend: 'New',
-                        trendUp: false,
-                      ),
-                    ],
+              // Quick Actions Header
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppDimensions.spacing16),
+                child: Text(
+                  'Quick Actions',
+                  style: AppTypography.headlineSmall.copyWith(
+                    color: AppColors.textPrimary,
                   ),
-              
-              const SizedBox(height: AppDimensions.spacing24),
-              
-              // Quick Actions
-              Text(
-                'Quick Actions',
-                style: AppTypography.titleLarge.copyWith(
-                  fontWeight: AppTypography.bold,
                 ),
               ),
-              const SizedBox(height: AppDimensions.spacing16),
+              
+              // Quick Actions Grid
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
                 crossAxisSpacing: AppDimensions.spacing16,
                 mainAxisSpacing: AppDimensions.spacing16,
-                childAspectRatio: 1.3,
+                childAspectRatio: 1.1,
                 children: [
-                  _buildQuickActionCard(
+                  QuickActionCard(
                     title: 'Add Product',
                     subtitle: 'List a new product',
-                    icon: Icons.add_shopping_cart,
-                    color: AppColors.primary500,
+                    icon: Icons.add_shopping_cart_outlined,
+                    backgroundColor: AppColors.primary100,
+                    iconColor: AppColors.primary500,
                     onTap: () {
                       // Navigate to add product
                     },
                   ),
-                  _buildQuickActionCard(
+                  QuickActionCard(
                     title: 'List Business',
                     subtitle: 'Seek investment',
-                    icon: Icons.business,
-                    color: AppColors.accent500,
+                    icon: Icons.business_outlined,
+                    backgroundColor: AppColors.success100,
+                    iconColor: AppColors.success500,
                     onTap: () {
                       // Navigate to list business
                     },
                   ),
-                  _buildQuickActionCard(
+                  QuickActionCard(
                     title: 'Messages',
                     subtitle: '5 unread',
-                    icon: Icons.message,
-                    color: AppColors.primary600,
+                    icon: Icons.chat_outlined,
+                    backgroundColor: AppColors.purple100,
+                    iconColor: AppColors.purple500,
                     onTap: () {
                       // Navigate to messages
                     },
                   ),
-                  _buildQuickActionCard(
+                  QuickActionCard(
                     title: 'Analytics',
                     subtitle: 'View performance',
-                    icon: Icons.analytics,
-                    color: AppColors.accent600,
+                    icon: Icons.analytics_outlined,
+                    backgroundColor: AppColors.neutral200,
+                    iconColor: AppColors.neutral700,
                     onTap: () {
                       // Navigate to analytics
                     },
