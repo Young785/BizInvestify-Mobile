@@ -9,7 +9,8 @@ import 'add_product_screen.dart';
 import 'add_business_screen.dart';
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
-  const MarketplaceScreen({super.key});
+  final int? initialTab; // 0 products, 1 businesses
+  const MarketplaceScreen({super.key, this.initialTab});
 
   @override
   ConsumerState<MarketplaceScreen> createState() => _MarketplaceScreenState();
@@ -24,13 +25,14 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTab ?? 0);
     _loadData();
   }
 
   void _loadData() {
     ref.read(marketplaceProvider.notifier).loadProducts();
     ref.read(marketplaceProvider.notifier).loadBusinesses();
+    ref.read(marketplaceProvider.notifier).loadMarketplaceMeta();
   }
 
   @override
@@ -143,24 +145,43 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
       onRefresh: () async {
         ref.read(marketplaceProvider.notifier).loadProducts();
       },
-      child: GridView.builder(
-        padding: const EdgeInsets.all(16.0),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.75,
-          crossAxisSpacing: 16.0,
-          mainAxisSpacing: 16.0,
-        ),
-        itemCount: state.products.length,
-        itemBuilder: (context, index) {
-          final product = state.products[index];
-          return ProductCard(
-            product: product,
-            onTap: () {
-              // Navigate to product details
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          if (state.categories.isNotEmpty) _buildCategoryChips(state),
+          if (state.featuredProducts.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('Featured', style: AppTypography.titleLarge.copyWith(fontWeight: AppTypography.bold)),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 240,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, i) => SizedBox(width: 180, child: ProductCard(product: state.featuredProducts[i])),
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemCount: state.featuredProducts.length.clamp(0, 10),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Text('All Products', style: AppTypography.titleLarge.copyWith(fontWeight: AppTypography.bold)),
+          const SizedBox(height: 8),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.75,
+              crossAxisSpacing: 16.0,
+              mainAxisSpacing: 16.0,
+            ),
+            itemCount: state.products.length,
+            itemBuilder: (context, index) {
+              final product = state.products[index];
+              return ProductCard(product: product);
             },
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -182,21 +203,45 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
       onRefresh: () async {
         ref.read(marketplaceProvider.notifier).loadBusinesses();
       },
-      child: ListView.builder(
+      child: ListView(
         padding: const EdgeInsets.all(16.0),
-        itemCount: state.businesses.length,
-        itemBuilder: (context, index) {
-          final business = state.businesses[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: BusinessCard(
-              business: business,
-              onTap: () {
-                // Navigate to business details
-              },
+        children: [
+          if (state.trending.isNotEmpty) ...[
+            Text('Trending', style: AppTypography.titleLarge.copyWith(fontWeight: AppTypography.bold)),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 140,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (_, i) {
+                  final item = state.trending[i];
+                  return Container(
+                    width: 220,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 6)),
+                    ]),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${item['name'] ?? item['title'] ?? 'Item'}', style: AppTypography.titleSmall.copyWith(fontWeight: AppTypography.semibold)),
+                      const SizedBox(height: 6),
+                      Text('${item['category'] ?? item['industry'] ?? ''}', style: AppTypography.captionSmall.copyWith(color: AppColors.textTertiary)),
+                    ]),
+                  );
+                },
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemCount: state.trending.length.clamp(0, 10),
+              ),
             ),
-          );
-        },
+            const SizedBox(height: 16),
+          ],
+          ...List.generate(state.businesses.length, (index) {
+            final business = state.businesses[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: BusinessCard(business: business),
+            );
+          })
+        ],
       ),
     );
   }
@@ -245,4 +290,19 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
   }
 
   // Filters are not implemented yet
+}
+
+Widget _buildCategoryChips(MarketplaceState state) {
+  return SizedBox(
+    height: 40,
+    child: ListView.separated(
+      scrollDirection: Axis.horizontal,
+      itemBuilder: (_, i) => Chip(
+        label: Text(state.categories[i]),
+        backgroundColor: Colors.white,
+      ),
+      separatorBuilder: (_, __) => const SizedBox(width: 8),
+      itemCount: state.categories.length.clamp(0, 15),
+    ),
+  );
 }

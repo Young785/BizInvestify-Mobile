@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../marketplace/screens/marketplace_screen.dart';
+import '../../../shared/widgets/navigation/sidebar_drawer.dart';
 import '../../messaging/screens/messages_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../providers/dashboard_provider.dart';
@@ -55,9 +56,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const SidebarDrawer(),
       backgroundColor: AppColors.background200,
       appBar: AppBar(
         title: Text('Dashboard', style: AppTypography.titleLarge.copyWith(fontWeight: AppTypography.bold)),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
         actions: [
           Stack(
             clipBehavior: Clip.none,
@@ -191,6 +199,8 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildBalanceCard(analytics),
+          const SizedBox(height: AppDimensions.spacing16),
           // Welcome Card
           Container(
             width: double.infinity,
@@ -273,6 +283,20 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
               ],
             ),
 
+          const SizedBox(height: AppDimensions.spacing24),
+
+          // Portfolio carousel (placeholder using featured/trending marketplace later)
+          Text('My Portfolio', style: AppTypography.titleLarge.copyWith(fontWeight: AppTypography.bold)),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 110,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (_, i) => _miniAssetCard(i),
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemCount: 6,
+            ),
+          ),
           const SizedBox(height: AppDimensions.spacing24),
 
           // Quick Actions
@@ -488,6 +512,89 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBalanceCard(DashboardAnalytics? analytics) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        color: AppColors.primary500,
+        borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 6)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Your current balance', style: AppTypography.captionMedium.copyWith(color: Colors.white70)),
+              const Icon(Icons.remove_red_eye_outlined, color: Colors.white70),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${(analytics?.totalRevenue ?? 0).toStringAsFixed(2)}',
+            style: AppTypography.headlineSmall.copyWith(color: Colors.white, fontWeight: AppTypography.bold),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _balanceAction(icon: Icons.south_west, label: 'Deposit'),
+              _balanceAction(icon: Icons.north_east, label: 'Withdraw'),
+              _balanceAction(icon: Icons.receipt_long_outlined, label: 'History'),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _balanceAction({required IconData icon, required String label}) {
+    return Column(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
+          child: Icon(icon, color: Colors.white),
+        ),
+        const SizedBox(height: 8),
+        Text(label, style: AppTypography.captionSmall.copyWith(color: Colors.white)),
+      ],
+    );
+  }
+
+  Widget _miniAssetCard(int i) {
+    final colors = [AppColors.primary500, AppColors.secondary500, AppColors.accent600, AppColors.primary600];
+    final color = colors[i % colors.length];
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [
+        BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 6)),
+      ]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          CircleAvatar(radius: 14, backgroundColor: color.withOpacity(0.15), child: Icon(Icons.show_chart, color: color, size: 16)),
+          const SizedBox(width: 8),
+          Text(i % 2 == 0 ? 'USD' : 'BNB/USD', style: AppTypography.bodySmall.copyWith(fontWeight: AppTypography.semibold)),
+        ]),
+        const Spacer(),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text(' 2${(120 + i * 3).toStringAsFixed(2)}', style: AppTypography.titleSmall.copyWith(fontWeight: AppTypography.bold)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+            child: Text('+${(1.2 + i * 0.2).toStringAsFixed(2)}%', style: const TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.w600)),
+          )
+        ])
+      ]),
     );
   }
 }

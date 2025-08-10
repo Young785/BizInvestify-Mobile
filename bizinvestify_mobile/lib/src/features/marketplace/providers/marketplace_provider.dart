@@ -98,8 +98,12 @@ class Business {
 class MarketplaceState {
   final List<Product> products;
   final List<Business> businesses;
+  final List<Product> featuredProducts;
+  final List<dynamic> trending; // can include both
+  final List<String> categories;
   final bool isLoadingProducts;
   final bool isLoadingBusinesses;
+  final bool isLoadingMeta;
   final String? error;
   final String? searchQuery;
   final String? selectedCategory;
@@ -108,8 +112,12 @@ class MarketplaceState {
   const MarketplaceState({
     this.products = const [],
     this.businesses = const [],
+    this.featuredProducts = const [],
+    this.trending = const [],
+    this.categories = const [],
     this.isLoadingProducts = false,
     this.isLoadingBusinesses = false,
+    this.isLoadingMeta = false,
     this.error,
     this.searchQuery,
     this.selectedCategory,
@@ -119,8 +127,12 @@ class MarketplaceState {
   MarketplaceState copyWith({
     List<Product>? products,
     List<Business>? businesses,
+    List<Product>? featuredProducts,
+    List<dynamic>? trending,
+    List<String>? categories,
     bool? isLoadingProducts,
     bool? isLoadingBusinesses,
+    bool? isLoadingMeta,
     String? error,
     String? searchQuery,
     String? selectedCategory,
@@ -129,8 +141,12 @@ class MarketplaceState {
     return MarketplaceState(
       products: products ?? this.products,
       businesses: businesses ?? this.businesses,
+      featuredProducts: featuredProducts ?? this.featuredProducts,
+      trending: trending ?? this.trending,
+      categories: categories ?? this.categories,
       isLoadingProducts: isLoadingProducts ?? this.isLoadingProducts,
       isLoadingBusinesses: isLoadingBusinesses ?? this.isLoadingBusinesses,
+      isLoadingMeta: isLoadingMeta ?? this.isLoadingMeta,
       error: error ?? this.error,
       searchQuery: searchQuery ?? this.searchQuery,
       selectedCategory: selectedCategory ?? this.selectedCategory,
@@ -182,6 +198,34 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
         error: e.toString(),
         isLoadingBusinesses: false,
       );
+    }
+  }
+
+  // Load marketplace meta: featured, trending, categories
+  Future<void> loadMarketplaceMeta() async {
+    state = state.copyWith(isLoadingMeta: true, error: null);
+    try {
+      final results = await Future.wait([
+        _apiService.getPublicTrending(),
+        _apiService.getPublicFeatured(),
+        _apiService.getPublicCategories(),
+      ]);
+
+      final trending = List<Map<String, dynamic>>.from(results[0] as List);
+      final featured = List<Map<String, dynamic>>.from(results[1] as List);
+      final categories = List<Map<String, dynamic>>.from(results[2] as List)
+          .map((e) => (e['name'] ?? e['title'] ?? e['slug'] ?? '').toString())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
+      state = state.copyWith(
+        trending: trending,
+        featuredProducts: featured.map((e) => Product.fromJson(e)).toList(),
+        categories: categories,
+        isLoadingMeta: false,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoadingMeta: false, error: e.toString());
     }
   }
 
@@ -298,6 +342,14 @@ final productsProvider = Provider<List<Product>>((ref) {
 
 final businessesProvider = Provider<List<Business>>((ref) {
   return ref.watch(marketplaceProvider).businesses;
+});
+
+final featuredProductsProvider = Provider<List<Product>>((ref) {
+  return ref.watch(marketplaceProvider).featuredProducts;
+});
+
+final categoriesProvider = Provider<List<String>>((ref) {
+  return ref.watch(marketplaceProvider).categories;
 });
 
 final marketplaceErrorProvider = Provider<String?>((ref) {
