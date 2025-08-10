@@ -82,4 +82,26 @@ class AppColors {
   static Color shadowLarge = Colors.black.withOpacity(0.15);
   static Color shadowPrimary = primary500.withOpacity(0.3);
   static Color shadowAccent = accent500.withOpacity(0.3);
+
+  // ---------------------------------------------------------------------------
+  // Legacy/compat aliases (for older widget code still referencing old tokens)
+  // ---------------------------------------------------------------------------
+  // Text aliases
+  static const Color textPrimary = text800;
+  static const Color textSecondary = text600;
+  static const Color textTertiary = text500;
+  static const Color textQuaternary = text400;
+
+  // Background aliases
+  static const Color backgroundPrimary = background50;
+  static const Color backgroundSecondary = background200;
+
+  // Semantic aliases
+  static const Color secondary500 = accent500; // old name → accent
+  static const Color warning500 = warning;
+  static const Color error500 = error;
+  static const Color success500 = success;
+
+  // Surface/border alias
+  static const Color surfaceBorder = background300;
 }

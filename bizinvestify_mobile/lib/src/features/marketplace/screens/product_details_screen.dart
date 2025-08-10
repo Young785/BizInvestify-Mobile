@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../models/product_model.dart' as product_model;
-import '../providers/marketplace_provider.dart' as marketplace_provider;
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/payment_sheet.dart';
 import '../../orders/screens/order_details_screen.dart';
@@ -480,7 +479,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
       child: Row(
         children: [
           Text(
-            '$labelText:',
+            '$label:',
             style: TextStyle(
               fontWeight: FontWeight.w500,
               color: Colors.grey[700],

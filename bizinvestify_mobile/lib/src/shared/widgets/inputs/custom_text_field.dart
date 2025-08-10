@@ -83,7 +83,7 @@ class CustomTextField extends StatelessWidget {
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
-              borderSide: const BorderSide(color: AppColors.error500,
+              borderSide: const BorderSide(color: AppColors.error500),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16.0,
@@ -93,7 +93,7 @@ class CustomTextField extends StatelessWidget {
               color: AppColors.textQuaternary,
             ),
             errorStyle: AppTypography.captionMedium.copyWith(
-              color: AppColors.error500
+              color: AppColors.error500,
             ),
           ),
         ),
