@@ -5,6 +5,7 @@ import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../orders/screens/orders_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -242,71 +243,62 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildMenuItems(BuildContext context, WidgetRef ref) {
-    final menuItems = [
-      {
-        'title': 'Edit Profile',
-        'subtitle': 'Update your personal information',
-        'icon': Icons.edit,
-        'color': AppColors.primary500,
-        'onTap': () {
-          // TODO: Navigate to edit profile
-        },
-      },
-      {
-        'title': 'KYC Verification',
-        'subtitle': 'Complete identity verification',
-        'icon': Icons.verified_user,
-        'color': AppColors.accent500,
-        'onTap': () {
-          // TODO: Navigate to KYC
-        },
-      },
-      {
-        'title': 'Security Settings',
-        'subtitle': 'Password, 2FA, and security',
-        'icon': Icons.security,
-        'color': AppColors.primary600,
-        'onTap': () {
-          // TODO: Navigate to security settings
-        },
-      },
-      {
-        'title': 'Notifications',
-        'subtitle': 'Manage notification preferences',
-        'icon': Icons.notifications,
-        'color': AppColors.accent600,
-        'onTap': () {
-          // TODO: Navigate to notifications
-        },
-      },
-      {
-        'title': 'Help & Support',
-        'subtitle': 'Get help and contact support',
-        'icon': Icons.help,
-        'color': AppColors.primary500,
-        'onTap': () {
-          // TODO: Navigate to help
-        },
-      },
-      {
-        'title': 'About',
-        'subtitle': 'App version and information',
-        'icon': Icons.info,
-        'color': AppColors.text600,
-        'onTap': () {
-          // TODO: Navigate to about
-        },
-      },
-    ];
-
     return Column(
-      children: menuItems.map((item) => _buildMenuItem(
-        title: item['title'] as String,
-        subtitle: item['subtitle'] as String,
-        icon: item['icon'] as IconData,
-        color: item['color'] as Color,
-        onTap: item['onTap'] as VoidCallback,
-      )).toList(),
+      children: [
+        _buildMenuItem(
+          context: context,
+          icon: Icons.person,
+          title: 'Edit Profile',
+          subtitle: 'Update your personal information',
+          onTap: () {},
+        ),
+        _buildMenuItem(
+          context: context,
+          icon: Icons.verified_user,
+          title: 'KYC Verification',
+          subtitle: 'Manage your identity verification',
+          onTap: () {},
+        ),
+        _buildMenuItem(
+          context: context,
+          icon: Icons.security,
+          title: 'Security',
+          subtitle: '2FA, passwords and devices',
+          onTap: () {},
+        ),
+        _buildMenuItem(
+          context: context,
+          icon: Icons.shopping_bag,
+          title: 'My Orders',
+          subtitle: 'View your transaction history',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const OrdersScreen()),
+            );
+          },
+        ),
+        _buildMenuItem(
+          context: context,
+          icon: Icons.notifications,
+          title: 'Notifications',
+          subtitle: 'Manage your alerts',
+          onTap: () {},
+        ),
+        _buildMenuItem(
+          context: context,
+          icon: Icons.help_outline,
+          title: 'Help & Support',
+          subtitle: 'Get assistance and FAQs',
+          onTap: () {},
+        ),
+        _buildMenuItem(
+          context: context,
+          icon: Icons.info_outline,
+          title: 'About',
+          subtitle: 'Learn more about BizInvestify',
+          onTap: () {},
+        ),
+      ],
     );
   }
 
