@@ -6,6 +6,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../models/product_model.dart';
 import '../providers/marketplace_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../widgets/payment_sheet.dart';
 
 class ProductDetailsScreen extends ConsumerStatefulWidget {
   final int productId;
@@ -629,8 +630,32 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
             Expanded(
               flex: 2,
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Navigate to purchase screen
+                onPressed: () async {
+                  if (_product == null) return;
+                  final result = await showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.white,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    builder: (_) => Padding(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom,
+                      ),
+                      child: PaymentSheet(
+                        productId: _product!.id,
+                        amount: _product!.price,
+                        currency: 'USD',
+                      ),
+                    ),
+                  );
+
+                  if (result != null && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Payment initiated successfully')),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary500,

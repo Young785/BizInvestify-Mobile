@@ -792,6 +792,25 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> processBankTransfer({
+    required double amount,
+    String currency = 'USD',
+    String? reference,
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      final response = await _dio.post('/payments/bank-transfer', data: {
+        'amount': amount,
+        'currency': currency,
+        if (reference != null) 'reference': reference,
+        if (metadata != null) 'metadata': metadata,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   // Paystack routes
   Future<Map<String, dynamic>> createPaystackProductPayment({
     required int productId,
