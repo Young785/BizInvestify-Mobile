@@ -16,6 +16,7 @@ class CustomTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
 
   const CustomTextField({
     super.key,
@@ -30,6 +31,7 @@ class CustomTextField extends StatelessWidget {
     this.suffixIcon,
     this.validator,
     this.onChanged,
+    this.onSubmitted,
   });
 
   @override
@@ -54,6 +56,7 @@ class CustomTextField extends StatelessWidget {
           enabled: enabled,
           validator: validator,
           onChanged: onChanged,
+          onFieldSubmitted: onSubmitted,
           style: AppTypography.bodyMedium.copyWith(
             color: enabled ? AppColors.text800 : AppColors.text500,
           ),
