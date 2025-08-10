@@ -7,6 +7,7 @@ import '../models/product_model.dart';
 import '../providers/marketplace_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/payment_sheet.dart';
+import '../../orders/screens/order_details_screen.dart';
 
 class ProductDetailsScreen extends ConsumerStatefulWidget {
   final int productId;
@@ -654,15 +655,33 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
                   if (result != null && mounted) {
                     final poll = result['poll'];
                     String message = 'Payment initiated successfully';
+                    bool navigateToOrder = false;
+                    String? txId;
                     if (poll != null) {
                       final status = poll['status'];
-                      if (status == 'success') message = 'Payment completed successfully';
+                      final data = poll['data'] as Map<String, dynamic>?;
+                      if (status == 'success') {
+                        message = 'Payment completed successfully';
+                        navigateToOrder = true;
+                        txId = (data?['transaction_id'] ?? data?['id'] ?? data?['reference'])?.toString();
+                      }
                       if (status == 'failed') message = 'Payment failed';
                       if (status == 'timeout') message = 'Payment status pending. Please check orders later';
                     }
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(message)),
                     );
+
+                    if (navigateToOrder && txId != null && txId.isNotEmpty) {
+                      // Small delay to let snackbar show briefly
+                      await Future.delayed(const Duration(milliseconds: 400));
+                      if (!mounted) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => OrderDetailsScreen(transactionId: txId!),
+                        ),
+                      );
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(
