@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../marketplace/screens/marketplace_screen.dart';
 import '../../messaging/screens/messages_screen.dart';
 import '../../profile/screens/profile_screen.dart';
