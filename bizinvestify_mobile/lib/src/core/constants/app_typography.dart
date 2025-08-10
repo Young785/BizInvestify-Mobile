@@ -4,8 +4,8 @@ import 'app_colors.dart';
 /// BizInvestify Professional Typography System
 /// Modern font hierarchy for production fintech app
 class AppTypography {
-  // Font Family - Plus Jakarta Sans for modern, professional look
-  static const String fontFamily = 'PlusJakartaSans';
+  // Font Family - Inter as primary, platform fallbacks
+  static const String fontFamily = 'Inter';
   static const String fontFamilyFallback = 'SF Pro Display'; // iOS fallback
   static const String fontFamilyAndroid = 'Roboto'; // Android fallback
 

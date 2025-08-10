@@ -9,8 +9,9 @@ class AppColors {
   static const Color primary200 = Color(0xFFBFDBFE);
   static const Color primary300 = Color(0xFF93C5FD);
   static const Color primary400 = Color(0xFF60A5FA);
-  static const Color primary500 = Color(0xFF0066FF); // Main Brand Blue
-  static const Color primary600 = Color(0xFF004CD9);
+  // Brand Primary Blue (#1A73E8)
+  static const Color primary500 = Color(0xFF1A73E8); // Main Brand Blue
+  static const Color primary600 = Color(0xFF1558B0);
   static const Color primary700 = Color(0xFF0039A6);
   static const Color primary800 = Color(0xFF1E3A8A);
   static const Color primary900 = Color(0xFF1E293B);
@@ -21,8 +22,9 @@ class AppColors {
   static const Color success200 = Color(0xFFBBF7D0);
   static const Color success300 = Color(0xFF86EFAC);
   static const Color success400 = Color(0xFF4ADE80);
-  static const Color success500 = Color(0xFF00D789); // Main Success
-  static const Color success600 = Color(0xFF00B377);
+  // Brand Accent Green (#00C48C)
+  static const Color success500 = Color(0xFF00C48C); // Main Accent/Success
+  static const Color success600 = Color(0xFF00A97A);
   static const Color success700 = Color(0xFF15803D);
   static const Color success800 = Color(0xFF166534);
   static const Color success900 = Color(0xFF14532D);

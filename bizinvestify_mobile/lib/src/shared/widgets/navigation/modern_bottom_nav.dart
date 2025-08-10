@@ -38,7 +38,7 @@ class ModernBottomNav extends StatelessWidget {
       ),
       child: SafeArea(
         child: Container(
-          height: 80,
+          height: 72,
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.spacing8,
             vertical: AppDimensions.spacing8,
@@ -66,7 +66,7 @@ class ModernBottomNav extends StatelessWidget {
                         AppDimensions.borderRadiusMedium,
                       ),
                       color: isSelected
-                          ? AppColors.primary500.withOpacity(0.1)
+                           ? AppColors.primary500.withOpacity(0.08)
                           : Colors.transparent,
                     ),
                     child: Column(

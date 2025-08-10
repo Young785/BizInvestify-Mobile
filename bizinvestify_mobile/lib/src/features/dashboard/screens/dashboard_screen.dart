@@ -35,7 +35,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _refreshBadges();
+    // Schedule after first frame to avoid build-phase state changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshBadges();
+      _loadAnalytics();
+    });
   }
 
   Future<void> _refreshBadges() async {
@@ -165,7 +169,8 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
   }
 
   void _loadAnalytics() {
-    ref.read(dashboardProvider.notifier).loadAnalytics();
+    // Defer provider mutation to a microtask to respect Riverpod rules
+    Future.microtask(() => ref.read(dashboardProvider.notifier).loadAnalytics());
   }
 
   @override
@@ -183,12 +188,7 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
           backgroundColor: AppColors.backgroundSecondary,
           elevation: 0,
           flexibleSpace: FlexibleSpaceBar(
-            title: Text(
-              'Welcome back, User!',
-              style: AppTypography.appBarTitle.copyWith(
-                color: AppColors.textPrimary,
-              ),
-            ),
+            title: null,
             titlePadding: const EdgeInsets.only(
               left: AppDimensions.containerPaddingMobile,
               bottom: AppDimensions.spacing16,
