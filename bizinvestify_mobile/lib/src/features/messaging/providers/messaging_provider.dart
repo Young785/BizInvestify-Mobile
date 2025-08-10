@@ -163,7 +163,10 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
   // Send Message
   Future<void> sendMessage(int conversationId, String content) async {
     try {
-      final messageData = await _apiService.sendMessage(conversationId, content);
+      final messageData = await _apiService.sendMessage({
+        'conversation_id': conversationId,
+        'content': content,
+      });
       final newMessage = Message.fromJson(messageData);
       
       // Add message to current list

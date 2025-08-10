@@ -150,7 +150,7 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
     state = state.copyWith(isLoadingProducts: true, error: null);
     
     try {
-      final productsData = await _apiService.getProducts();
+      final productsData = await _apiService.getPublicProducts();
       final products = productsData.map((json) => Product.fromJson(json)).toList();
       
       state = state.copyWith(
@@ -170,7 +170,7 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
     state = state.copyWith(isLoadingBusinesses: true, error: null);
     
     try {
-      final businessesData = await _apiService.getBusinesses();
+      final businessesData = await _apiService.getPublicBusinesses();
       final businesses = businessesData.map((json) => Business.fromJson(json)).toList();
       
       state = state.copyWith(

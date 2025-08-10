@@ -166,7 +166,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
     
     try {
       final response = await _apiService.login(email, password);
-      final user = User.fromJson(response['user']);
+      
+      // Handle token storage - check different possible token field names
+      if (response['token'] != null) {
+        await _apiService.storeToken(response['token']);
+      } else if (response['access_token'] != null) {
+        await _apiService.storeToken(response['access_token']);
+      } else if (response['data'] != null && response['data']['token'] != null) {
+        await _apiService.storeToken(response['data']['token']);
+      }
+      
+      // Extract user data - handle different response structures
+      Map<String, dynamic> userData;
+      if (response['user'] != null) {
+        userData = response['user'];
+      } else if (response['data'] != null && response['data']['user'] != null) {
+        userData = response['data']['user'];
+      } else {
+        userData = response; // Assume the response itself is user data
+      }
+      
+      final user = User.fromJson(userData);
       
       state = state.copyWith(
         user: user,
@@ -249,7 +269,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
     
     try {
-      final response = await _apiService.uploadKycDocuments(documents);
+      final response = await _apiService.uploadKyc(documents);
       final updatedUser = User.fromJson(response['user']);
       
       state = state.copyWith(

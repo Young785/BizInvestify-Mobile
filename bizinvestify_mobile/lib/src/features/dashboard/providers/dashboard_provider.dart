@@ -87,7 +87,7 @@ class DashboardNotifier extends StateNotifier<DashboardState> {
     state = state.copyWith(isLoading: true, error: null);
     
     try {
-      final analyticsData = await _apiService.getDashboardStats();
+      final analyticsData = await _apiService.getStats();
       final analytics = DashboardAnalytics.fromJson(analyticsData);
       
       state = state.copyWith(
