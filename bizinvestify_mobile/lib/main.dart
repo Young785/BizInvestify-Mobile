@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/core/routing/app_router.dart';
-import 'features/payments/stripe_service.dart';
+import 'src/features/payments/stripe_service.dart';
 import 'src/core/services/notification_service.dart';
+import 'src/core/settings/settings_controller.dart';
 
 const String kStripePublishableKey = String.fromEnvironment('STRIPE_PUBLISHABLE_KEY', defaultValue: '');
 
@@ -22,13 +23,14 @@ void main() async {
   );
 }
 
-class BizInvestifyApp extends StatelessWidget {
+class BizInvestifyApp extends ConsumerWidget {
   const BizInvestifyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
     return ScreenUtilInit(
-      designSize: const Size(375, 812), // iPhone X design size
+      designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
@@ -37,7 +39,8 @@ class BizInvestifyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.light,
+          themeMode: settings.themeMode,
+          locale: settings.locale,
           initialRoute: AppRouter.splash,
           onGenerateRoute: AppRouter.generateRoute,
         );

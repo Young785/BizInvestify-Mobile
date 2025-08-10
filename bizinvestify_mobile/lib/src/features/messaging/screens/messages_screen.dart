@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../providers/messaging_provider.dart';
 import '../widgets/conversation_tile.dart';
+import '../models/conversation_model.dart';
 import 'chat_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 

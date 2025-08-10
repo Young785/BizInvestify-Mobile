@@ -26,9 +26,8 @@ class PaymentControllerTest extends TestCase
 
     public function test_process_bank_transfer_validates_and_creates_records(): void
     {
-        $this->markTestSkipped('Pending alignment of PaymentController with transactions schema in tests.');
-        /* $user = User::factory()->create();
-        $token = $user->createToken('t')->plainTextToken; */
+        $user = User::factory()->create(['role' => 'buyer']);
+        $this->actingAs($user, 'sanctum');
 
         $business = Business::factory()->create(['valuation' => 100000]);
 
@@ -39,11 +38,10 @@ class PaymentControllerTest extends TestCase
             'transfer_type' => 'bank_transfer',
         ];
 
-        // Seed minimal required relationships: set buyer/seller IDs to avoid FK issues in transactions
-        /* $this->postJson('/api/payments/bank-transfer', $payload)
+        $this->postJson('/api/payments/bank-transfer', $payload)
             ->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonStructure(['transaction_id', 'investment_id']); */
+            ->assertJsonStructure(['transaction_id', 'investment_id']);
     }
 }
 

@@ -8,6 +8,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../orders/screens/orders_screen.dart';
 import '../../wallet/screens/wallet_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
+import '../../../core/settings/settings_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -315,6 +316,57 @@ class ProfileScreen extends ConsumerWidget {
           subtitle: 'Learn more about BizInvestify',
           onTap: () {},
         ),
+        _buildMenuItem(
+          context: context,
+          icon: Icons.color_lens,
+          title: 'Theme',
+          subtitle: 'Light / Dark / System',
+          onTap: () async {
+            final mode = await showModalBottomSheet<ThemeMode>(
+              context: context,
+              builder: (_) => SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(title: const Text('Light'), onTap: () => Navigator.pop(context, ThemeMode.light)),
+                    ListTile(title: const Text('Dark'), onTap: () => Navigator.pop(context, ThemeMode.dark)),
+                    ListTile(title: const Text('System'), onTap: () => Navigator.pop(context, ThemeMode.system)),
+                  ],
+                ),
+              ),
+            );
+            if (mode != null) {
+              await ref.read(settingsProvider.notifier).setThemeMode(mode);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Theme updated')));
+            }
+          },
+        ),
+        _buildMenuItem(
+          context: context,
+          icon: Icons.language,
+          title: 'Language',
+          subtitle: 'Select app language',
+          onTap: () async {
+            final code = await showModalBottomSheet<String>(
+              context: context,
+              builder: (_) => SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(title: const Text('English'), onTap: () => Navigator.pop(context, 'en')),
+                    ListTile(title: const Text('French'), onTap: () => Navigator.pop(context, 'fr')),
+                  ],
+                ),
+              ),
+            );
+            if (code != null) {
+              await ref.read(settingsProvider.notifier).setLocale(Locale(code));
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Language updated')));
+            }
+          },
+        ),
       ],
     );
   }
@@ -323,7 +375,7 @@ class ProfileScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
     required IconData icon,
-    required Color color,
+    Color color = AppColors.primary500,
     required VoidCallback onTap,
   }) {
     return Container(

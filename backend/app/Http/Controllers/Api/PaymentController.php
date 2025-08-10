@@ -181,16 +181,16 @@ class PaymentController extends Controller
             $user = $request->user();
             $business = Business::findOrFail($request->business_id);
 
-            // Create transaction record
+            // Create transaction record aligned with schema
             $transaction = Transaction::create([
-                'user_id' => $user->id,
-                'business_id' => $business->id,
+                'buyer_id' => $user->id,
+                'seller_id' => $business->seller_id,
+                'listing_id' => $business->id,
+                'listing_type' => 'business',
                 'amount' => $request->amount,
-                'type' => 'investment',
-                'status' => 'pending',
                 'payment_method' => 'bank_transfer',
-                'reference' => 'BANK-' . time(),
-                'metadata' => [
+                'status' => 'pending',
+                'payment_details' => [
                     'payment_intent' => $request->payment_intent,
                     'transfer_type' => $request->transfer_type,
                 ],
@@ -198,12 +198,11 @@ class PaymentController extends Controller
 
             // Create investment record
             $investment = Investment::create([
-                'user_id' => $user->id,
+                'investor_id' => $user->id,
                 'business_id' => $business->id,
                 'amount' => $request->amount,
                 'equity_percentage' => $this->calculateEquityPercentage($request->amount, $business),
                 'status' => 'pending',
-                'transaction_id' => $transaction->id,
             ]);
 
                 return response()->json([

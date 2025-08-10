@@ -3,7 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../providers/messaging_provider.dart';
+import '../models/conversation_model.dart';
 
 class ConversationTile extends StatelessWidget {
   final Conversation conversation;
@@ -49,7 +49,7 @@ class ConversationTile extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          conversation.recipientName,
+                          conversation.recipient.name,
                           style: AppTypography.titleSmall.copyWith(
                             fontWeight: AppTypography.semibold,
                             color: AppColors.text800,
@@ -61,7 +61,7 @@ class ConversationTile extends StatelessWidget {
                       
                       // Time
                       Text(
-                        _formatTime(conversation.updatedAt),
+                         _formatTime(conversation.updatedAt),
                         style: AppTypography.captionSmall.copyWith(
                           color: AppColors.text500,
                         ),
@@ -76,7 +76,7 @@ class ConversationTile extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          conversation.lastMessage?.content ?? 'No messages yet',
+                          conversation.lastMessage ?? 'No messages yet',
                           style: AppTypography.bodySmall.copyWith(
                             color: conversation.unreadCount > 0
                                 ? AppColors.text800
@@ -130,11 +130,11 @@ class ConversationTile extends StatelessWidget {
         color: AppColors.primary500.withOpacity(0.1),
         borderRadius: BorderRadius.circular(25),
       ),
-      child: conversation.recipientAvatar != null
+       child: conversation.recipient.profilePicture != null
           ? ClipRRect(
               borderRadius: BorderRadius.circular(25),
               child: CachedNetworkImage(
-                imageUrl: conversation.recipientAvatar!,
+                imageUrl: conversation.recipient.profilePicture!,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: AppColors.primary500.withOpacity(0.1),
