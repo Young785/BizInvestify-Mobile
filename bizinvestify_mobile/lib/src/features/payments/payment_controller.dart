@@ -1,5 +1,5 @@
 import 'dart:async';
-import '../../../core/services/api_service.dart';
+import '../../core/services/api_service.dart';
 
 class PaymentController {
   final ApiService _api = apiService;

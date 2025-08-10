@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/services/websocket_service.dart';
-import '../providers/messaging_provider.dart' hide Message, Conversation;
+import '../providers/messaging_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/message_model.dart';
 import '../models/conversation_model.dart';

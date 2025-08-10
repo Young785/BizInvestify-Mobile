@@ -8,6 +8,8 @@ import '../../marketplace/screens/marketplace_screen.dart';
 import '../../messaging/screens/messages_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../providers/dashboard_provider.dart';
+import '../../notifications/screens/notifications_screen.dart';
+import '../../../core/services/api_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -18,6 +20,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _currentIndex = 0;
+  int _unreadMessages = 0;
+  int _unreadNotifications = 0;
 
   final List<Widget> _pages = [
     const DashboardContent(),
@@ -25,6 +29,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     const MessagesScreen(),
     const ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshBadges();
+  }
+
+  Future<void> _refreshBadges() async {
+    try {
+      final msg = await apiService.getUnreadCount();
+      final noti = await apiService.getNotificationUnreadCount();
+      if (mounted) {
+        setState(() {
+          _unreadMessages = msg;
+          _unreadNotifications = noti;
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +60,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           setState(() {
             _currentIndex = index;
           });
+          _refreshBadges();
         },
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
@@ -51,20 +75,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           fontWeight: AppTypography.regular,
         ),
         elevation: 8,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.store),
             label: 'Marketplace',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.message),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.message),
+                if (_unreadMessages > 0)
+                  Positioned(
+                    right: -6,
+                    top: -2,
+                    child: _Badge(count: _unreadMessages),
+                  ),
+              ],
+            ),
             label: 'Messages',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
           ),
@@ -76,6 +111,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         },
         backgroundColor: AppColors.primary500,
         child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final int count;
+  const _Badge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.red,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -131,11 +186,30 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
             ),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.notifications, color: Colors.white),
-              onPressed: () {
-                // Navigate to notifications
-              },
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.notifications, color: Colors.white),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                    );
+                  },
+                ),
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: FutureBuilder<int>(
+                    future: apiService.getNotificationUnreadCount(),
+                    builder: (context, snapshot) {
+                      final c = snapshot.data ?? 0;
+                      if (c <= 0) return const SizedBox.shrink();
+                      return _Badge(count: c);
+                    },
+                  ),
+                ),
+              ],
             ),
             IconButton(
               icon: const Icon(Icons.person, color: Colors.white),
