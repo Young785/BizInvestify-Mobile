@@ -652,8 +652,16 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
                   );
 
                   if (result != null && mounted) {
+                    final poll = result['poll'];
+                    String message = 'Payment initiated successfully';
+                    if (poll != null) {
+                      final status = poll['status'];
+                      if (status == 'success') message = 'Payment completed successfully';
+                      if (status == 'failed') message = 'Payment failed';
+                      if (status == 'timeout') message = 'Payment status pending. Please check orders later';
+                    }
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Payment initiated successfully')),
+                      SnackBar(content: Text(message)),
                     );
                   }
                 },

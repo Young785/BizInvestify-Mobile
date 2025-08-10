@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_service.dart';
+import '../../payments/payment_controller.dart';
 
 enum PaymentMethodType { card, paystack, bankTransfer }
 
@@ -34,6 +35,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
 
     try {
       Map<String, dynamic> result;
+      String? intentId;
       switch (_selected) {
         case PaymentMethodType.card:
           result = await apiService.createProductPaymentIntent(
@@ -41,9 +43,9 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
             amount: widget.amount,
             currency: widget.currency,
           );
-          // NOTE: In real flow, confirm with card details via gateway SDK, then:
-          if (result['payment_intent_id'] != null) {
-            await apiService.confirmPayment(paymentIntentId: result['payment_intent_id']);
+          intentId = result['payment_intent_id'] ?? result['id'];
+          if (intentId != null) {
+            await apiService.confirmPayment(paymentIntentId: intentId);
           }
           break;
         case PaymentMethodType.paystack:
@@ -52,7 +54,8 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
             amount: widget.amount,
             currency: widget.currency == 'USD' ? 'NGN' : widget.currency,
           );
-          // You would open a Paystack checkout with authorization_url if provided
+          // If reference is provided, poll backend for verification if needed
+          intentId = result['payment_intent_id'] ?? result['id'] ?? result['reference'];
           break;
         case PaymentMethodType.bankTransfer:
           result = await apiService.processBankTransfer(
@@ -63,11 +66,17 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
               'note': 'Manual bank transfer for product purchase',
             },
           );
+          intentId = result['payment_intent_id'] ?? result['id'];
           break;
       }
 
+      Map<String, dynamic>? poll;
+      if (intentId != null) {
+        poll = await paymentController.pollPaymentStatus(intentId);
+      }
+
       if (!mounted) return;
-      Navigator.of(context).pop(result);
+      Navigator.of(context).pop({'result': result, 'poll': poll});
     } catch (e) {
       setState(() {
         _error = e.toString();
