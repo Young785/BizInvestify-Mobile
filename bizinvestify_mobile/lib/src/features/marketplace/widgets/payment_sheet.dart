@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_service.dart';
 import '../../payments/payment_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum PaymentMethodType { card, paystack, bankTransfer }
 
@@ -54,7 +55,13 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
             amount: widget.amount,
             currency: widget.currency == 'USD' ? 'NGN' : widget.currency,
           );
-          // If reference is provided, poll backend for verification if needed
+          final authUrl = result['authorization_url'] ?? result['auth_url'];
+          if (authUrl != null) {
+            final uri = Uri.parse(authUrl.toString());
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          }
           intentId = result['payment_intent_id'] ?? result['id'] ?? result['reference'];
           break;
         case PaymentMethodType.bankTransfer:
