@@ -6,6 +6,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../orders/screens/orders_screen.dart';
+import '../../wallet/screens/wallet_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -245,6 +246,17 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildMenuItems(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
+        _buildMenuItem(
+          context: context,
+          icon: Icons.account_balance_wallet,
+          title: 'Wallet',
+          subtitle: 'View balance and transactions',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const WalletScreen()),
+            );
+          },
+        ),
         _buildMenuItem(
           context: context,
           icon: Icons.person,
