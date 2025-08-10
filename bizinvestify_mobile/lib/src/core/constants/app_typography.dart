@@ -1,283 +1,206 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-/// BizInvestify Professional Typography System
-/// Modern font hierarchy for production fintech app
+/// BizInvestify Typography System
+/// Based on the web platform design system with Inter font family
 class AppTypography {
-  // Font Family - Inter as primary, platform fallbacks
-  static String getFontFamily() {
-    // Use GoogleFonts Inter
-    return GoogleFonts.inter().fontFamily ?? 'Inter';
-  }
-
-  static String get fontFamily => getFontFamily();
-  static const String fontFamilyFallback = 'SF Pro Display'; // iOS fallback
-  static const String fontFamilyAndroid = 'Roboto'; // Android fallback
+  // Font Family
+  static const String fontFamily = 'Inter';
 
   // Font Weights
-  static const FontWeight light = FontWeight.w300;
   static const FontWeight regular = FontWeight.w400;
   static const FontWeight medium = FontWeight.w500;
   static const FontWeight semibold = FontWeight.w600;
   static const FontWeight bold = FontWeight.w700;
-  static const FontWeight extrabold = FontWeight.w800;
 
-  // Display Text Styles - Hero text
-  static TextStyle displayLarge = TextStyle(
+  // Display Text Styles
+  static const TextStyle displayLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 64,
-    fontWeight: extrabold,
+    fontWeight: bold,
     height: 1.1,
-    letterSpacing: -2.0,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
-  static TextStyle displayMedium = TextStyle(
+  static const TextStyle displayMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 48,
-    fontWeight: extrabold,
-    height: 1.15,
-    letterSpacing: -1.5,
-    color: AppColors.textPrimary,
+    fontWeight: bold,
+    height: 1.2,
+    color: AppColors.text800,
   );
 
-  static TextStyle displaySmall = TextStyle(
+  static const TextStyle displaySmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 40,
     fontWeight: bold,
     height: 1.2,
-    letterSpacing: -1.0,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
-  // Headline Text Styles - Section headers
-  static TextStyle headlineLarge = TextStyle(
+  // Headline Text Styles
+  static const TextStyle headlineLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 32,
     fontWeight: bold,
-    height: 1.25,
-    letterSpacing: -0.8,
-    color: AppColors.textPrimary,
+    height: 1.3,
+    color: AppColors.text800,
   );
 
-  static TextStyle headlineMedium = TextStyle(
+  static const TextStyle headlineMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 28,
-    fontWeight: bold,
+    fontWeight: semibold,
     height: 1.3,
-    letterSpacing: -0.6,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
-  static TextStyle headlineSmall = TextStyle(
+  static const TextStyle headlineSmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 24,
-    fontWeight: bold,
-    height: 1.3,
-    letterSpacing: -0.4,
-    color: AppColors.textPrimary,
+    fontWeight: semibold,
+    height: 1.4,
+    color: AppColors.text800,
   );
 
-  // Title Text Styles - Card headers
-  static TextStyle titleLarge = TextStyle(
+  // Title Text Styles
+  static const TextStyle titleLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 22,
     fontWeight: semibold,
-    height: 1.35,
-    letterSpacing: -0.2,
-    color: AppColors.textPrimary,
-  );
-
-  static TextStyle titleMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 18,
-    fontWeight: semibold,
     height: 1.4,
-    letterSpacing: 0.0,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
-  static TextStyle titleSmall = TextStyle(
+  static const TextStyle titleMedium = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 16,
-    fontWeight: semibold,
+    fontSize: 20,
+    fontWeight: medium,
     height: 1.4,
-    letterSpacing: 0.1,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
-  // Body Text Styles - Main content
-  static TextStyle bodyLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16,
-    fontWeight: regular,
-    height: 1.5,
-    letterSpacing: 0.2,
-    color: AppColors.textSecondary,
-  );
-
-  static TextStyle bodyMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: regular,
-    height: 1.5,
-    letterSpacing: 0.2,
-    color: AppColors.textSecondary,
-  );
-
-  static TextStyle bodySmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12,
-    fontWeight: regular,
-    height: 1.5,
-    letterSpacing: 0.3,
-    color: AppColors.textTertiary,
-  );
-
-  // Label Text Styles - Buttons and small text
-  static TextStyle labelLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: semibold,
-    height: 1.4,
-    letterSpacing: 0.3,
-    color: AppColors.textSecondary,
-  );
-
-  static TextStyle labelMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12,
-    fontWeight: semibold,
-    height: 1.4,
-    letterSpacing: 0.4,
-    color: AppColors.textTertiary,
-  );
-
-  static TextStyle labelSmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 10,
-    fontWeight: semibold,
-    height: 1.4,
-    letterSpacing: 0.5,
-    color: AppColors.textMuted,
-  );
-
-  // Caption Text Styles
-  static TextStyle captionLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: regular,
-    height: 1.4,
-    letterSpacing: 0.3,
-    color: AppColors.textTertiary,
-  );
-
-  static TextStyle captionMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12,
-    fontWeight: regular,
-    height: 1.4,
-    letterSpacing: 0.4,
-    color: AppColors.textTertiary,
-  );
-
-  static TextStyle captionSmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 10,
-    fontWeight: regular,
-    height: 1.4,
-    letterSpacing: 0.5,
-    color: AppColors.textMuted,
-  );
-
-  // Button Text Styles
-  static TextStyle buttonLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 18,
-    fontWeight: semibold,
-    height: 1.2,
-    letterSpacing: 0.2,
-    color: AppColors.white,
-  );
-
-  static TextStyle buttonMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16,
-    fontWeight: semibold,
-    height: 1.2,
-    letterSpacing: 0.3,
-    color: AppColors.white,
-  );
-
-  static TextStyle buttonSmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: semibold,
-    height: 1.2,
-    letterSpacing: 0.4,
-    color: AppColors.white,
-  );
-
-  // Financial Text Styles
-  static TextStyle financialLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 32,
-    fontWeight: bold,
-    height: 1.2,
-    letterSpacing: -0.5,
-    color: AppColors.textPrimary,
-  );
-
-  static TextStyle financialMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 24,
-    fontWeight: semibold,
-    height: 1.3,
-    letterSpacing: -0.2,
-    color: AppColors.textPrimary,
-  );
-
-  static TextStyle financialSmall = TextStyle(
+  static const TextStyle titleSmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 18,
     fontWeight: medium,
     height: 1.4,
-    letterSpacing: 0.0,
-    color: AppColors.textSecondary,
+    color: AppColors.text800,
+  );
+
+  // Body Text Styles
+  static const TextStyle bodyLarge = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18,
+    fontWeight: regular,
+    height: 1.5,
+    color: AppColors.text700,
+  );
+
+  static const TextStyle bodyMedium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16,
+    fontWeight: regular,
+    height: 1.5,
+    color: AppColors.text700,
+  );
+
+  static const TextStyle bodySmall = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: regular,
+    height: 1.5,
+    color: AppColors.text600,
+  );
+
+  // Label Text Styles
+  static const TextStyle labelLarge = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16,
+    fontWeight: medium,
+    height: 1.4,
+    color: AppColors.text700,
+  );
+
+  static const TextStyle labelMedium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: medium,
+    height: 1.4,
+    color: AppColors.text700,
+  );
+
+  static const TextStyle labelSmall = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12,
+    fontWeight: medium,
+    height: 1.4,
+    color: AppColors.text600,
+  );
+
+  // Caption Text Styles
+  static const TextStyle captionLarge = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: regular,
+    height: 1.4,
+    color: AppColors.text500,
+  );
+
+  static const TextStyle captionMedium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12,
+    fontWeight: regular,
+    height: 1.4,
+    color: AppColors.text500,
+  );
+
+  static const TextStyle captionSmall = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 10,
+    fontWeight: regular,
+    height: 1.4,
+    color: AppColors.text400,
+  );
+
+  // Button Text Styles
+  static const TextStyle buttonLarge = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18,
+    fontWeight: semibold,
+    height: 1.2,
+    color: Colors.white,
+  );
+
+  static const TextStyle buttonMedium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16,
+    fontWeight: semibold,
+    height: 1.2,
+    color: Colors.white,
+  );
+
+  static const TextStyle buttonSmall = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: semibold,
+    height: 1.2,
+    color: Colors.white,
   );
 
   // Gradient Text Styles
   static TextStyle gradientText(TextStyle baseStyle) {
     return baseStyle.copyWith(
       foreground: Paint()
-        ..shader = AppColors.primaryGradient.createShader(
-          const Rect.fromLTWH(0, 0, 200, 70),
-        ),
-    );
-  }
-
-  static TextStyle successGradientText(TextStyle baseStyle) {
-    return baseStyle.copyWith(
-      foreground: Paint()
-        ..shader = AppColors.successGradient.createShader(
-          const Rect.fromLTWH(0, 0, 200, 70),
-        ),
-    );
-  }
-
-  static TextStyle purpleGradientText(TextStyle baseStyle) {
-    return baseStyle.copyWith(
-      foreground: Paint()
-        ..shader = AppColors.purpleGradient.createShader(
-          const Rect.fromLTWH(0, 0, 200, 70),
-        ),
+        ..shader = const LinearGradient(
+          colors: [AppColors.primary500, AppColors.accent500],
+        ).createShader(const Rect.fromLTWH(0, 0, 200, 70)),
     );
   }
 
   // Complete Text Theme
   static TextTheme get textTheme {
-    return TextTheme(
+    return const TextTheme(
       displayLarge: displayLarge,
       displayMedium: displayMedium,
       displaySmall: displaySmall,
@@ -295,67 +218,50 @@ class AppTypography {
       labelSmall: labelSmall,
     );
   }
-
-  // Special Text Styles for specific use cases
-  static TextStyle appBarTitle = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 20,
-    fontWeight: bold,
-    height: 1.3,
-    letterSpacing: -0.3,
-    color: AppColors.textPrimary,
-  );
-
-  static TextStyle cardTitle = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 18,
-    fontWeight: semibold,
-    height: 1.4,
-    letterSpacing: 0.0,
-    color: AppColors.textPrimary,
-  );
-
-  static TextStyle cardSubtitle = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: regular,
-    height: 1.4,
-    letterSpacing: 0.1,
-    color: AppColors.textTertiary,
-  );
-
-  static TextStyle bottomNavLabel = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12,
-    fontWeight: medium,
-    height: 1.3,
-    letterSpacing: 0.5,
-  );
-
-  static TextStyle inputLabel = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16,
-    fontWeight: medium,
-    height: 1.4,
-    letterSpacing: 0.1,
-    color: AppColors.textSecondary,
-  );
-
-  static TextStyle inputHint = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16,
-    fontWeight: regular,
-    height: 1.4,
-    letterSpacing: 0.1,
-    color: AppColors.textMuted,
-  );
-
-  static TextStyle errorText = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12,
-    fontWeight: medium,
-    height: 1.4,
-    letterSpacing: 0.3,
-    color: AppColors.error,
-  );
+  
+  // === UTILITY METHODS ===
+  
+  // Create branded text style
+  static TextStyle branded(TextStyle baseStyle) {
+    return baseStyle.copyWith(
+      color: AppColors.primary500,
+      fontWeight: semibold,
+    );
+  }
+  
+  // Create muted text style
+  static TextStyle muted(TextStyle baseStyle) {
+    return baseStyle.copyWith(
+      color: AppColors.textMuted,
+    );
+  }
+  
+  // Create emphasized text style
+  static TextStyle emphasized(TextStyle baseStyle) {
+    return baseStyle.copyWith(
+      fontWeight: semibold,
+      color: AppColors.textPrimary,
+    );
+  }
+  
+  // Create success text style
+  static TextStyle success(TextStyle baseStyle) {
+    return baseStyle.copyWith(
+      color: AppColors.success500,
+    );
+  }
+  
+  // Create error text style
+  static TextStyle error(TextStyle baseStyle) {
+    return baseStyle.copyWith(
+      color: AppColors.error500,
+    );
+  }
+  
+  // Create warning text style
+  static TextStyle warning(TextStyle baseStyle) {
+    return baseStyle.copyWith(
+      color: AppColors.warning500,
+    );
+  }
 }

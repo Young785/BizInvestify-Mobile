@@ -1,80 +1,61 @@
-/// BizInvestify Professional Dimensions & Spacing System
-/// Modern 8px grid system for consistent, professional spacing
+/// BizInvestify Dimensions & Spacing System
+/// Based on 8px grid system for consistent spacing
 class AppDimensions {
   // Base Unit
   static const double baseUnit = 8.0;
 
-  // Comprehensive Spacing Scale
-  static const double spacing2 = 2.0;
+  // Spacing Scale
   static const double spacing4 = 4.0;
-  static const double spacing6 = 6.0;
   static const double spacing8 = 8.0;
   static const double spacing12 = 12.0;
   static const double spacing16 = 16.0;
-  static const double spacing20 = 20.0;
   static const double spacing24 = 24.0;
-  static const double spacing28 = 28.0;
   static const double spacing32 = 32.0;
-  static const double spacing40 = 40.0;
   static const double spacing48 = 48.0;
-  static const double spacing56 = 56.0;
   static const double spacing64 = 64.0;
-  static const double spacing80 = 80.0;
-  static const double spacing96 = 96.0;
 
-  // Container Padding - Responsive
-  static const double containerPaddingMobile = 20.0;
-  static const double containerPaddingTablet = 32.0;
-  static const double containerPaddingDesktop = 40.0;
+  // Container Padding
+  static const double containerPaddingMobile = 16.0;
+  static const double containerPaddingTablet = 24.0;
 
-  // Card Padding - Modern spacing
+  // Card Padding
   static const double cardPaddingSmall = 16.0;
-  static const double cardPaddingMedium = 24.0;
-  static const double cardPaddingLarge = 32.0;
-  static const double cardPaddingExtraLarge = 40.0;
+  static const double cardPaddingMedium = 20.0;
+  static const double cardPaddingLarge = 24.0;
 
-  // Button Padding - Professional sizing
-  static const double buttonPaddingHorizontal = 24.0;
-  static const double buttonPaddingVertical = 16.0;
-  static const double buttonPaddingLargeHorizontal = 32.0;
-  static const double buttonPaddingLargeVertical = 20.0;
-  static const double buttonPaddingSmallHorizontal = 16.0;
-  static const double buttonPaddingSmallVertical = 12.0;
+  // Button Padding
+  static const double buttonPaddingHorizontal = 16.0;
+  static const double buttonPaddingVertical = 12.0;
+  static const double buttonPaddingLargeHorizontal = 24.0;
+  static const double buttonPaddingLargeVertical = 16.0;
 
-  // Border Radius - Modern, smooth curves
-  static const double borderRadiusXSmall = 6.0;
-  static const double borderRadiusSmall = 10.0;
-  static const double borderRadiusMedium = 14.0;
-  static const double borderRadiusLarge = 18.0;
-  static const double borderRadiusXLarge = 24.0;
-  static const double borderRadiusXXLarge = 32.0;
+  // Border Radius
+  static const double borderRadiusSmall = 8.0;
+  static const double borderRadiusMedium = 12.0;
+  static const double borderRadiusLarge = 16.0;
+  static const double borderRadiusExtraLarge = 24.0;
 
-  // Icon Sizes - Modern scale
-  static const double iconSizeXSmall = 12.0;
+  // Icon Sizes
   static const double iconSizeSmall = 16.0;
-  static const double iconSizeMedium = 20.0;
-  static const double iconSizeLarge = 24.0;
-  static const double iconSizeXLarge = 32.0;
-  static const double iconSizeXXLarge = 48.0;
+  static const double iconSizeMedium = 24.0;
+  static const double iconSizeLarge = 32.0;
+  static const double iconSizeExtraLarge = 48.0;
 
-  // Avatar Sizes - Modern scale
-  static const double avatarSizeSmall = 28.0;
-  static const double avatarSizeMedium = 36.0;
-  static const double avatarSizeLarge = 48.0;
-  static const double avatarSizeXLarge = 64.0;
-  static const double avatarSizeXXLarge = 80.0;
-  static const double avatarSizeHero = 120.0;
+  // Avatar Sizes
+  static const double avatarSizeSmall = 32.0;
+  static const double avatarSizeMedium = 40.0;
+  static const double avatarSizeLarge = 56.0;
+  static const double avatarSizeExtraLarge = 80.0;
 
-  // Input Heights - Professional sizing
-  static const double inputHeightSmall = 44.0;
-  static const double inputHeightMedium = 52.0;
-  static const double inputHeightLarge = 60.0;
+  // Input Heights
+  static const double inputHeightSmall = 40.0;
+  static const double inputHeightMedium = 48.0;
+  static const double inputHeightLarge = 56.0;
 
-  // Button Heights - Touch-friendly
-  static const double buttonHeightSmall = 40.0;
-  static const double buttonHeightMedium = 48.0;
-  static const double buttonHeightLarge = 56.0;
-  static const double buttonHeightXLarge = 64.0;
+  // Button Heights
+  static const double buttonHeightSmall = 36.0;
+  static const double buttonHeightMedium = 44.0;
+  static const double buttonHeightLarge = 52.0;
 
   // App Bar Heights
   static const double appBarHeight = 56.0;
