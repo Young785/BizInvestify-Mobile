@@ -437,13 +437,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           if (isMe) ...[
             const SizedBox(width: 8),
-            CircleAvatar(
+             CircleAvatar(
               radius: 16,
               backgroundColor: AppColors.accent500,
-              backgroundImage: currentUser?.profilePicture != null
-                  ? NetworkImage(currentUser!.profilePicture!)
+              backgroundImage: (ref.watch(userProvider))?.profilePicture != null
+                  ? NetworkImage(ref.watch(userProvider)!.profilePicture!)
                   : null,
-              child: currentUser?.profilePicture == null
+              child: (ref.watch(userProvider))?.profilePicture == null
                   ? const Icon(
                       Icons.person,
                       color: Colors.white,

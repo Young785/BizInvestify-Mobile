@@ -7,6 +7,7 @@ import '../widgets/conversation_tile.dart';
 import '../models/conversation_model.dart';
 import 'chat_screen.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/services/api_service.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
