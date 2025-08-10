@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/services/api_service.dart';
+import 'order_details_screen.dart';
 
 class OrdersScreen extends ConsumerStatefulWidget {
   const OrdersScreen({super.key});
@@ -149,10 +150,15 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
               ),
           ],
         ),
-        onTap: () async {
-          // Optionally fetch full transaction details
-          // final details = await apiService.getTransaction(id);
-        },
+        onTap: id.isEmpty
+            ? null
+            : () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => OrderDetailsScreen(transactionId: id),
+                  ),
+                );
+              },
       ),
     );
   }
