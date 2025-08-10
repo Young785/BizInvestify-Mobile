@@ -249,7 +249,6 @@ class ProfileScreen extends ConsumerWidget {
     return Column(
       children: [
         _buildMenuItem(
-          context: context,
           icon: Icons.account_balance_wallet,
           title: 'Wallet',
           subtitle: 'View balance and transactions',
@@ -260,28 +259,24 @@ class ProfileScreen extends ConsumerWidget {
           },
         ),
         _buildMenuItem(
-          context: context,
           icon: Icons.person,
           title: 'Edit Profile',
           subtitle: 'Update your personal information',
           onTap: () {},
         ),
         _buildMenuItem(
-          context: context,
           icon: Icons.verified_user,
           title: 'KYC Verification',
           subtitle: 'Manage your identity verification',
           onTap: () {},
         ),
         _buildMenuItem(
-          context: context,
           icon: Icons.security,
           title: 'Security',
           subtitle: '2FA, passwords and devices',
           onTap: () {},
         ),
         _buildMenuItem(
-          context: context,
           icon: Icons.shopping_bag,
           title: 'My Orders',
           subtitle: 'View your transaction history',
@@ -292,7 +287,6 @@ class ProfileScreen extends ConsumerWidget {
           },
         ),
         _buildMenuItem(
-          context: context,
           icon: Icons.notifications,
           title: 'Notifications',
           subtitle: 'Manage your alerts',
@@ -303,21 +297,18 @@ class ProfileScreen extends ConsumerWidget {
           },
         ),
         _buildMenuItem(
-          context: context,
           icon: Icons.help_outline,
           title: 'Help & Support',
           subtitle: 'Get assistance and FAQs',
           onTap: () {},
         ),
         _buildMenuItem(
-          context: context,
           icon: Icons.info_outline,
           title: 'About',
           subtitle: 'Learn more about BizInvestify',
           onTap: () {},
         ),
         _buildMenuItem(
-          context: context,
           icon: Icons.color_lens,
           title: 'Theme',
           subtitle: 'Light / Dark / System',
@@ -343,7 +334,6 @@ class ProfileScreen extends ConsumerWidget {
           },
         ),
         _buildMenuItem(
-          context: context,
           icon: Icons.language,
           title: 'Language',
           subtitle: 'Select app language',
