@@ -2,11 +2,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../routing/app_router.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
-  static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  // Do NOT eagerly access FirebaseMessaging on web. Use lazily within guarded code paths.
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   // Notification channels
@@ -37,6 +39,12 @@ class NotificationService {
 
   // Initialize notification service
   static Future<void> initialize() async {
+    // Web guard: flutter_local_notifications and firebase_messaging are not supported on web
+    if (kIsWeb) {
+      // Optionally, implement a web-specific notifications flow later (Browser Notifications API)
+      return;
+    }
+
     // Initialize local notifications
     const initializationSettings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -66,7 +74,8 @@ class NotificationService {
         ?.createNotificationChannel(_transactionChannel);
 
     // Request permission for push notifications
-    final settings = await _firebaseMessaging.requestPermission(
+    final messaging = FirebaseMessaging.instance;
+    final settings = await messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
@@ -75,7 +84,7 @@ class NotificationService {
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       // Get FCM token
-      final token = await _firebaseMessaging.getToken();
+      final token = await messaging.getToken();
       if (token != null) {
         await _storage.write(key: 'fcm_token', value: token);
         print('FCM Token: $token');
@@ -91,7 +100,7 @@ class NotificationService {
       FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
       // Handle initial notification
-      final initialMessage = await _firebaseMessaging.getInitialMessage();
+      final initialMessage = await messaging.getInitialMessage();
       if (initialMessage != null) {
         _handleNotificationTap(initialMessage);
       }
@@ -208,20 +217,18 @@ class NotificationService {
   static void _handleNotificationPayload(String payload) {
     if (payload.startsWith('chat:')) {
       final conversationId = payload.split(':')[1];
-      // TODO: Navigate to chat screen
-      print('Navigate to chat: $conversationId');
+      // TODO: Navigate to chat screen - not implemented here
     } else if (payload.startsWith('transaction:')) {
       final transactionId = payload.split(':')[1];
-      // TODO: Navigate to transaction details
-      print('Navigate to transaction: $transactionId');
+      AppRouter.pushNamed(AppRouter.orderDetails, arguments: {'id': transactionId});
     } else if (payload.startsWith('product:')) {
-      final productId = payload.split(':')[1];
-      // TODO: Navigate to product details
-      print('Navigate to product: $productId');
+      final idStr = payload.split(':')[1];
+      final id = int.tryParse(idStr);
+      if (id != null) {
+        AppRouter.pushNamed(AppRouter.productDetails, arguments: {'id': id});
+      }
     } else if (payload.startsWith('business:')) {
-      final businessId = payload.split(':')[1];
-      // TODO: Navigate to business details
-      print('Navigate to business: $businessId');
+      // TODO: business details screen route when available
     }
   }
 
@@ -291,12 +298,14 @@ class NotificationService {
 
   // Subscribe to topic
   static Future<void> subscribeToTopic(String topic) async {
-    await _firebaseMessaging.subscribeToTopic(topic);
+    if (kIsWeb) return;
+    await FirebaseMessaging.instance.subscribeToTopic(topic);
   }
 
   // Unsubscribe from topic
   static Future<void> unsubscribeFromTopic(String topic) async {
-    await _firebaseMessaging.unsubscribeFromTopic(topic);
+    if (kIsWeb) return;
+    await FirebaseMessaging.instance.unsubscribeFromTopic(topic);
   }
 }
 

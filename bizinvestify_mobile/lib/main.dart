@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'src/core/theme/app_theme.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'src/core/routing/app_router.dart';
 import 'src/features/payments/stripe_service.dart';
 import 'src/core/services/notification_service.dart';
@@ -11,7 +12,7 @@ const String kStripePublishableKey = String.fromEnvironment('STRIPE_PUBLISHABLE_
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (kStripePublishableKey.isNotEmpty) {
+  if (!kIsWeb && kStripePublishableKey.isNotEmpty) {
     await stripeService.initialize(publishableKey: kStripePublishableKey);
   }
   await NotificationService.initialize();
@@ -35,6 +36,7 @@ class BizInvestifyApp extends ConsumerWidget {
       splitScreenMode: true,
       builder: (context, child) {
         return MaterialApp(
+          navigatorKey: AppRouter.navigatorKey,
           title: 'BizInvestify',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,

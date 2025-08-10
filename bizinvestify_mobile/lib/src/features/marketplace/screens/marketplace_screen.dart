@@ -72,92 +72,47 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
     final marketplaceState = ref.watch(marketplaceProvider);
     
     return Scaffold(
-      backgroundColor: AppColors.background200,
-      appBar: AppBar(
-        title: const Text('Marketplace'),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.primary500,
-          unselectedLabelColor: AppColors.text500,
-          indicatorColor: AppColors.primary500,
-          tabs: const [
-            Tab(text: 'Products'),
-            Tab(text: 'Businesses'),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          // Search and Filter Section
-          Container(
-            padding: const EdgeInsets.all(AppDimensions.spacing16),
-            color: Colors.white,
-            child: Column(
-              children: [
-                // Search Bar
-                CustomTextField(
-                  controller: _searchController,
-                  hint: 'Search products, businesses...',
-                  prefixIcon: const Icon(Icons.search, color: AppColors.text500),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                    _performSearch();
-                  },
+      backgroundColor: AppColors.background50,
+      body: CustomScrollView(
+        slivers: [
+          // Search App Bar
+          SliverAppBar(
+            floating: true,
+            backgroundColor: Colors.white,
+            elevation: 2,
+            title: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search products, businesses...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                 ),
-                
-                const SizedBox(height: AppDimensions.spacing12),
-                
-                // Filter Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      if (_tabController.index == 0) ...[
-                        ..._productCategories.map((category) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(category),
-                            selected: _selectedCategory == category,
-                            onSelected: (selected) {
-                              setState(() {
-                                _selectedCategory = selected ? category : 'All';
-                              });
-                              _applyFilters();
-                            },
-                            selectedColor: AppColors.primary500.withOpacity(0.2),
-                            checkmarkColor: AppColors.primary500,
-                          ),
-                        )),
-                      ] else ...[
-                        ..._businessIndustries.map((industry) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(industry),
-                            selected: _selectedIndustry == industry,
-                            onSelected: (selected) {
-                              setState(() {
-                                _selectedIndustry = selected ? industry : 'All';
-                              });
-                              _applyFilters();
-                            },
-                            selectedColor: AppColors.primary500.withOpacity(0.2),
-                            checkmarkColor: AppColors.primary500,
-                          ),
-                        )),
-                      ],
-                    ],
-                  ),
-                ),
+                onChanged: (value) {
+                  ref.read(marketplaceProvider.notifier).search(value);
+                },
+              ),
+            ),
+            bottom: TabBar(
+              controller: _tabController,
+              labelColor: AppColors.primary500,
+              unselectedLabelColor: Colors.grey[600],
+              indicatorColor: AppColors.primary500,
+              tabs: const [
+                Tab(text: 'Products'),
+                Tab(text: 'Businesses'),
               ],
             ),
           ),
           
-          // Content
-          Expanded(
+          // Marketplace Content
+          SliverFillRemaining(
             child: TabBarView(
               controller: _tabController,
               children: [
@@ -170,6 +125,23 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
             ),
           ),
         ],
+      ),
+      floatingActionButton: PopupMenuButton<String>(
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'product', child: Text('Add Product')),
+          PopupMenuItem(value: 'business', child: Text('Add Business')),
+        ],
+        onSelected: (value) {
+          if (value == 'product') {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add Product flow coming soon')));
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add Business flow coming soon')));
+          }
+        },
+        child: const CircleAvatar(
+          backgroundColor: AppColors.primary500,
+          child: Icon(Icons.add, color: Colors.white),
+        ),
       ),
     );
   }
