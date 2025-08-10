@@ -6,6 +6,8 @@ import '../../../core/constants/app_dimensions.dart';
 import '../widgets/product_card.dart';
 import '../widgets/business_card.dart';
 import '../providers/marketplace_provider.dart';
+import 'add_product_screen.dart';
+import 'add_business_screen.dart';
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
   const MarketplaceScreen({super.key});
@@ -104,11 +106,17 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
           PopupMenuItem(value: 'product', child: Text('Add Product')),
           PopupMenuItem(value: 'business', child: Text('Add Business')),
         ],
-        onSelected: (value) {
+        onSelected: (value) async {
           if (value == 'product') {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add Product flow coming soon')));
+            await Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AddProductScreen()),
+            );
+            if (mounted) ref.read(marketplaceProvider.notifier).loadProducts();
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add Business flow coming soon')));
+            await Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AddBusinessScreen()),
+            );
+            if (mounted) ref.read(marketplaceProvider.notifier).loadBusinesses();
           }
         },
         child: const CircleAvatar(
