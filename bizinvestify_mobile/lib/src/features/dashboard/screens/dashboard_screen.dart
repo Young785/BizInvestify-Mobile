@@ -144,14 +144,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 Icons.dashboard_rounded,
                 _currentIndex == 0,
               ),
-              labelText: 'Dashboard',
+              label: 'Dashboard',
             ),
             BottomNavigationBarItem(
               icon: _buildNavIcon(
                 Icons.store_rounded,
                 _currentIndex == 1,
               ),
-              labelText: 'Marketplace',
+              label: 'Marketplace',
             ),
             BottomNavigationBarItem(
               icon: _buildNavIconWithBadge(
@@ -159,14 +159,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 _currentIndex == 2,
                 _unreadMessages,
               ),
-              labelText: 'Messages',
+              label: 'Messages',
             ),
             BottomNavigationBarItem(
               icon: _buildNavIcon(
                 Icons.person_rounded,
                 _currentIndex == 3,
               ),
-              labelText: 'Profile',
+              label: 'Profile',
             ),
           ],
         ),

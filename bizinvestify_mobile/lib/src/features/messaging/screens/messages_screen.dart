@@ -138,7 +138,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
               // TODO: Navigate to new conversation screen
             },
             icon: const Icon(Icons.add),
-            labelText: const Text('Start New Chat'),
+            label: const Text('Start New Chat'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary500,
               foregroundColor: Colors.white,

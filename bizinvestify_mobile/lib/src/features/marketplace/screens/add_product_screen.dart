@@ -77,19 +77,19 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             children: [
               _textField(
                 controller: _nameController,
-                labelText: 'Product Name',
+                label: 'Product Name',
                 validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
               ),
               const SizedBox(height: 12.0),
               _textField(
                 controller: _descriptionController,
-                labelText: 'Description',
+                label: 'Description',
                 maxLines: 4,
               ),
               const SizedBox(height: 12.0),
               _textField(
                 controller: _priceController,
-                labelText: 'Price',
+                label: 'Price',
                 keyboardType: TextInputType.number,
                 validator: (v) {
                   final t = v?.trim();
@@ -101,7 +101,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               const SizedBox(height: 12.0),
               _textField(
                 controller: _categoryController,
-                labelText: 'Category (optional)',
+                label: 'Category (optional)',
               ),
               const SizedBox(height: 16.0),
               Text('Image (optional)', style: AppTypography.titleSmall),
@@ -111,7 +111,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                   ElevatedButton.icon(
                     onPressed: _submitting ? null : _pickImage,
                     icon: const Icon(Icons.photo),
-                    labelText: const Text('Choose Image'),
+                    label: const Text('Choose Image'),
                   ),
                   const SizedBox(width: 12.0),
                   if (_image != null)
@@ -157,7 +157,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       maxLines: maxLines,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        labelText: label,
+        label: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: Colors.white,

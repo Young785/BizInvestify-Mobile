@@ -228,7 +228,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           // Google login
                         },
                         icon: const Icon(Icons.g_mobiledata, size: 24),
-                        labelText: const Text('Google'),
+                        label: const Text('Google'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -241,7 +241,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           // Apple login
                         },
                         icon: const Icon(Icons.apple, size: 24),
-                        labelText: const Text('Apple'),
+                        label: const Text('Apple'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),

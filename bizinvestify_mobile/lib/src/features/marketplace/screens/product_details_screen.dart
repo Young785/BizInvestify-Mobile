@@ -480,7 +480,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
       child: Row(
         children: [
           Text(
-            '$labelText:',
+            '$label:',
             style: TextStyle(
               fontWeight: FontWeight.w500,
               color: Colors.grey[700],
@@ -618,7 +618,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
                   // TODO: Navigate to chat with seller
                 },
                 icon: const Icon(Icons.message),
-                labelText: const Text('Message Seller'),
+                label: const Text('Message Seller'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey[100],
                   foregroundColor: Colors.black87,

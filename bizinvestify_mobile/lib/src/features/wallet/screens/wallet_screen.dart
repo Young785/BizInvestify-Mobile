@@ -293,7 +293,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     }
                   },
                   icon: const Icon(Icons.add_circle_outline),
-                  labelText: const Text('Top Up'),
+                  label: const Text('Top Up'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -305,7 +305,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                   ),
                   onPressed: _requestWithdraw,
                   icon: const Icon(Icons.arrow_downward),
-                  labelText: const Text('Withdraw'),
+                  label: const Text('Withdraw'),
                 ),
               ),
             ],
