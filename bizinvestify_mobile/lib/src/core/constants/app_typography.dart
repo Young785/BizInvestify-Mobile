@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// BizInvestify Professional Typography System
 /// Modern font hierarchy for production fintech app
 class AppTypography {
   // Font Family - Inter as primary, platform fallbacks
-  static const String fontFamily = 'Inter';
+  static String getFontFamily() {
+    // Use GoogleFonts Inter
+    return GoogleFonts.inter().fontFamily ?? 'Inter';
+  }
+
+  static String get fontFamily => getFontFamily();
   static const String fontFamilyFallback = 'SF Pro Display'; // iOS fallback
   static const String fontFamilyAndroid = 'Roboto'; // Android fallback
 
