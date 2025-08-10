@@ -4,6 +4,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/buttons/primary_button.dart';
+import '../../marketplace/screens/marketplace_screen.dart';
+import '../../messaging/screens/messages_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -17,8 +19,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   final List<Widget> _pages = [
     const DashboardContent(),
-    const Center(child: Text('Marketplace')),
-    const Center(child: Text('Messages')),
+    const MarketplaceScreen(),
+    const MessagesScreen(),
     const Center(child: Text('Profile')),
   ];
 

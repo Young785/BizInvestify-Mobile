@@ -6,6 +6,8 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../../shared/widgets/inputs/custom_text_field.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
+import '../providers/auth_provider.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -29,6 +31,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    
     return Scaffold(
       backgroundColor: AppColors.background200,
       body: SafeArea(
@@ -146,10 +150,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 
                 // Login Button
                 PrimaryButton(
-                  onPressed: _handleLogin,
+                  onPressed: authState.isLoading ? null : _handleLogin,
                   isFullWidth: true,
-                  child: const Text('Sign In'),
+                  child: authState.isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text('Sign In'),
                 ),
+                
+                const SizedBox(height: 16),
+                
+                // Error Message
+                if (authState.error != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Text(
+                      authState.error!,
+                      style: TextStyle(color: Colors.red[700]),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 
                 const SizedBox(height: 16),
                 
@@ -163,12 +194,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       },
                       child: const Text('Forgot Password?'),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        // Navigate to register
-                      },
-                      child: const Text('Create Account'),
-                    ),
+                                                    TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const RegisterScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('Create Account'),
+                                ),
                   ],
                 ),
                 
@@ -223,17 +258,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  void _handleLogin() {
+  void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement login logic
-      print('Login with: ${_emailController.text}');
-      
-      // Navigate to dashboard for now
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const DashboardScreen(),
-        ),
+      final success = await ref.read(authProvider.notifier).login(
+        _emailController.text,
+        _passwordController.text,
       );
+      
+      if (success && mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const DashboardScreen(),
+          ),
+        );
+      }
     }
   }
 }
