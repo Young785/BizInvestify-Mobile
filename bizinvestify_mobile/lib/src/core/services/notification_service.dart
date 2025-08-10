@@ -8,6 +8,7 @@ import '../routing/app_router.dart';
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+        // static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   // Do NOT eagerly access FirebaseMessaging on web. Use lazily within guarded code paths.
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
@@ -216,8 +217,12 @@ class NotificationService {
   // Handle notification payload
   static void _handleNotificationPayload(String payload) {
     if (payload.startsWith('chat:')) {
-      final conversationId = payload.split(':')[1];
+      final String conversationId = payload.split(':')[1];
       // TODO: Navigate to chat screen - not implemented here
+      if (conversationId.isNotEmpty) {
+        // placeholder side-effect to mark variable as used
+        print('chat conversation: $conversationId');
+      }
     } else if (payload.startsWith('transaction:')) {
       final transactionId = payload.split(':')[1];
       AppRouter.pushNamed(AppRouter.orderDetails, arguments: {'id': transactionId});
