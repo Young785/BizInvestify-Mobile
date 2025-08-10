@@ -157,7 +157,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       maxLines: maxLines,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        label: label,
+        labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: Colors.white,

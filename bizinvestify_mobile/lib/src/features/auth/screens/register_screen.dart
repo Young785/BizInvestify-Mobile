@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../../shared/widgets/inputs/custom_text_field.dart';
+import '../../../core/constants/app_dimensions.dart';
 import '../providers/auth_provider.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 

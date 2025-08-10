@@ -483,9 +483,9 @@ class ProfileScreen extends ConsumerWidget {
       case 'verified':
         return AppColors.secondary500;
       case 'pending':
-        return AppColors.warning500
+        return AppColors.warning500;
       case 'rejected':
-        return AppColors.error500
+        return AppColors.error500;
       default:
         return AppColors.textTertiary;
     }

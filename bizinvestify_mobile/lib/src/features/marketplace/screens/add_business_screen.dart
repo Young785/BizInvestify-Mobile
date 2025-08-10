@@ -142,7 +142,7 @@ class _AddBusinessScreenState extends ConsumerState<AddBusinessScreen> {
       maxLines: maxLines,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        label: label,
+        labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: Colors.white,
