@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../providers/messaging_provider.dart';
 import '../widgets/conversation_tile.dart';
+import 'chat_screen.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -17,11 +17,10 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   @override
   void initState() {
     super.initState();
-    _loadConversations();
-  }
-
-  void _loadConversations() {
-    ref.read(messagingProvider.notifier).loadConversations();
+    // Load conversations when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(messagingProvider.notifier).loadConversations();
+    });
   }
 
   @override
@@ -41,10 +40,19 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
               // TODO: Implement search conversations
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // TODO: Show more options
+          PopupMenuButton(
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'mark_all_read',
+                child: Text('Mark All as Read'),
+              ),
+              const PopupMenuItem(
+                value: 'clear_all',
+                child: Text('Clear All'),
+              ),
+            ],
+            onSelected: (value) {
+              // TODO: Handle menu selection
             },
           ),
         ],
@@ -53,31 +61,10 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
           ? const Center(child: CircularProgressIndicator())
           : messagingState.conversations.isEmpty
               ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    _loadConversations();
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(AppDimensions.spacing16),
-                    itemCount: messagingState.conversations.length,
-                    itemBuilder: (context, index) {
-                      final conversation = messagingState.conversations[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: AppDimensions.spacing12),
-                        child: ConversationTile(
-                          conversation: conversation,
-                          onTap: () {
-                            // Navigate to chat screen
-                            _navigateToChat(conversation);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
+              : _buildConversationsList(messagingState),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Navigate to new conversation
+          // TODO: Navigate to new conversation screen
         },
         backgroundColor: AppColors.primary500,
         child: const Icon(Icons.chat, color: Colors.white),
@@ -92,39 +79,35 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
         children: [
           Icon(
             Icons.chat_bubble_outline,
-            size: 64,
-            color: AppColors.text400,
+            size: 80,
+            color: Colors.grey[400],
           ),
-          const SizedBox(height: AppDimensions.spacing16),
+          const SizedBox(height: 16),
           Text(
-            'No Messages Yet',
-            style: AppTypography.titleLarge.copyWith(
-              color: AppColors.text600,
-              fontWeight: AppTypography.semibold,
+            'No conversations yet',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: AppDimensions.spacing8),
+          const SizedBox(height: 8),
           Text(
-            'Start a conversation with sellers or investors',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.text500,
+            'Start a conversation with other users',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.grey[500],
             ),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppDimensions.spacing24),
+          const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () {
-              // TODO: Navigate to marketplace to start conversation
+              // TODO: Navigate to new conversation screen
             },
-            icon: const Icon(Icons.explore),
-            label: const Text('Browse Marketplace'),
+            icon: const Icon(Icons.add),
+            label: const Text('Start New Chat'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary500,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.spacing24,
-                vertical: AppDimensions.spacing12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
         ],
@@ -132,15 +115,29 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     );
   }
 
-  void _navigateToChat(dynamic conversation) {
-    // TODO: Navigate to chat screen
-    // Navigator.of(context).push(
-    //   MaterialPageRoute(
-    //     builder: (context) => ChatScreen(
-    //       conversationId: conversation.id,
-    //       recipientName: conversation.recipientName,
-    //     ),
-    //   ),
-    // );
+  Widget _buildConversationsList(MessagingState state) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: state.conversations.length,
+      itemBuilder: (context, index) {
+        final conversation = state.conversations[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: ConversationTile(
+            conversation: conversation,
+            onTap: () {
+              // Navigate to chat screen
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ChatScreen(
+                    conversation: conversation,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 }
