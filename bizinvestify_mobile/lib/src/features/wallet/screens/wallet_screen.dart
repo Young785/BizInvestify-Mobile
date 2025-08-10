@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/services/api_service.dart';
+import '../../marketplace/widgets/payment_sheet.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -166,8 +167,31 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     foregroundColor: Colors.white,
                     side: BorderSide(color: Colors.white.withOpacity(0.6)),
                   ),
-                  onPressed: () {
-                    // TODO: Top up wallet (payment intent)
+                  onPressed: () async {
+                    final result = await showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                      ),
+                      builder: (_) => Padding(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).viewInsets.bottom,
+                        ),
+                        child: const PaymentSheet(
+                          amount: 50.0, // Example top-up; ideally show amount entry UI
+                          currency: 'USD',
+                          contextType: PaymentContext.walletTopUp,
+                        ),
+                      ),
+                    );
+                    if (result != null && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Top-up initiated')),
+                      );
+                      await _load();
+                    }
                   },
                   icon: const Icon(Icons.add_circle_outline),
                   label: const Text('Top Up'),
