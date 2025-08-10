@@ -3,8 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/core/routing/app_router.dart';
+import 'features/payments/stripe_service.dart';
 
-void main() {
+const String kStripePublishableKey = String.fromEnvironment('STRIPE_PUBLISHABLE_KEY', defaultValue: '');
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kStripePublishableKey.isNotEmpty) {
+    await stripeService.initialize(publishableKey: kStripePublishableKey);
+  }
+
   runApp(
     const ProviderScope(
       child: BizInvestifyApp(),

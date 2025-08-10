@@ -306,3 +306,25 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **BizInvestify Mobile App** - Your Business, Your Investment, Your Success! 🚀
+
+# BizInvestify Mobile - Payments
+
+## Stripe Setup
+- Add your Stripe publishable key via Dart define at build time:
+
+```
+flutter run --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+```
+
+- The app reads it from `kStripePublishableKey` and initializes Stripe on startup.
+- PaymentSheet will try to use Stripe UI for Card payments and fallback to backend confirm if unavailable.
+
+## Paystack Flow
+- When using Paystack payment for products, the app opens `authorization_url` externally and then polls `/payments/status/{id}`.
+
+## Bank Transfer
+- Bank transfer creates a pending transaction and instructs the user to transfer manually; the app polls status.
+
+## Wallet
+- Wallet Top Up uses Card or Bank Transfer (Paystack hidden for wallet context).
+- Withdraw requests currently post a support ticket until a dedicated endpoint is provided.
