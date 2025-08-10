@@ -538,7 +538,7 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${(analytics?.totalRevenue ?? 0).toStringAsFixed(2)}',
+            '\$${(analytics?.totalRevenue ?? 0).toStringAsFixed(2)}',
             style: AppTypography.headlineSmall.copyWith(color: Colors.white, fontWeight: AppTypography.bold),
           ),
           const SizedBox(height: 12),
@@ -587,7 +587,7 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
         ]),
         const Spacer(),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(' 2${(120 + i * 3).toStringAsFixed(2)}', style: AppTypography.titleSmall.copyWith(fontWeight: AppTypography.bold)),
+          Text('\$${(120 + i * 3).toStringAsFixed(2)}', style: AppTypography.titleSmall.copyWith(fontWeight: AppTypography.bold)),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
