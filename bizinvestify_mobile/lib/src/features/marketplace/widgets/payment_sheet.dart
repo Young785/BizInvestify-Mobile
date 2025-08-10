@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_service.dart';
 import '../../payments/payment_controller.dart';
+import '../../payments/stripe_service.dart';
 
 enum PaymentMethodType { card, paystack, bankTransfer }
 enum PaymentContext { product, walletTopUp }
@@ -47,6 +48,24 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
 
       switch (_selected) {
         case PaymentMethodType.card:
+          // Prefer Stripe UI when publishable key is configured (assumes env/config set elsewhere)
+          // If fails, fallback to server-side confirm
+          try {
+            // TODO: Move publishable key to secure config
+            await stripeService.initialize(publishableKey: 'pk_test_12345');
+            final status = await stripeService.payWithCard(
+              context: context,
+              amount: widget.amount,
+              currency: widget.currency,
+              productId: _isWalletTopUp ? null : widget.productId,
+              metadata: _isWalletTopUp ? {'type': 'wallet_topup'} : null,
+            );
+            result = status;
+            intentId = status['id'] ?? status['payment_intent_id'];
+            break;
+          } catch (_) {
+            // Fallback to backend-only flow
+          }
           if (_isWalletTopUp) {
             result = await apiService.createPaymentIntent({
               'amount': widget.amount,
