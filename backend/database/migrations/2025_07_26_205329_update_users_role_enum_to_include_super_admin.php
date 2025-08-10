@@ -12,8 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Update the role enum to include super_admin
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('seller', 'buyer', 'admin', 'super_admin') DEFAULT 'buyer'");
+        // Only run on MySQL/MariaDB. SQLite (used in tests) doesn't support MODIFY/ENUM.
+        $driver = DB::getDriverName();
+        if (in_array($driver, ['mysql', 'mariadb'])) {
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('seller', 'buyer', 'admin', 'super_admin') DEFAULT 'buyer'");
+        }
     }
 
     /**
@@ -21,7 +24,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Revert back to original enum
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('seller', 'buyer', 'admin') DEFAULT 'buyer'");
+        $driver = DB::getDriverName();
+        if (in_array($driver, ['mysql', 'mariadb'])) {
+            // Revert back to original enum
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('seller', 'buyer', 'admin') DEFAULT 'buyer'");
+        }
     }
 };

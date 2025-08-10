@@ -1638,7 +1638,8 @@ class AuthController extends Controller
         }
 
         $sessionKey = '2fa_verified_' . $user->id;
-        $isVerified = $request->session()->has($sessionKey);
+        // In stateless API contexts, a session store may not be available
+        $isVerified = $request->hasSession() ? $request->session()->has($sessionKey) : false;
 
         return response()->json([
             'success' => true,
