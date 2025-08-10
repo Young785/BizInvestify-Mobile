@@ -5,6 +5,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../providers/messaging_provider.dart';
 import '../widgets/conversation_tile.dart';
 import 'chat_screen.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -63,8 +64,41 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
               ? _buildEmptyState()
               : _buildConversationsList(messagingState),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Navigate to new conversation screen
+        onPressed: () async {
+          final controller = TextEditingController();
+          final ok = await showDialog<bool>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Start New Chat'),
+                content: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Recipient User ID',
+                    hintText: 'e.g. 42',
+                  ),
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+                  ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Create')),
+                ],
+              );
+            },
+          );
+          if (ok == true) {
+            final userId = int.tryParse(controller.text.trim());
+            if (userId == null) return;
+            try {
+              await apiService.createConversation({'recipient_id': userId});
+              await ref.read(messagingProvider.notifier).loadConversations();
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Conversation created')));
+            } catch (e) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+            }
+          }
         },
         backgroundColor: AppColors.primary500,
         child: const Icon(Icons.chat, color: Colors.white),

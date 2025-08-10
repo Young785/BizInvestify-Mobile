@@ -7,6 +7,7 @@ import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../orders/screens/orders_screen.dart';
 import '../../wallet/screens/wallet_screen.dart';
+import '../../notifications/screens/notifications_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -294,7 +295,11 @@ class ProfileScreen extends ConsumerWidget {
           icon: Icons.notifications,
           title: 'Notifications',
           subtitle: 'Manage your alerts',
-          onTap: () {},
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+            );
+          },
         ),
         _buildMenuItem(
           context: context,
