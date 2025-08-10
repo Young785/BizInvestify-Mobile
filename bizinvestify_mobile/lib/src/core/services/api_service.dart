@@ -665,6 +665,300 @@ class ApiService {
   }
 
   // ========================================
+  // PAYMENTS ENDPOINTS
+  // ========================================
+
+  Future<Map<String, dynamic>> createPaymentIntent(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/payments/create-intent', data: data);
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createProductPaymentIntent({
+    required int productId,
+    required double amount,
+    String currency = 'USD',
+  }) async {
+    try {
+      final response = await _dio.post('/payments/product-intent', data: {
+        'product_id': productId,
+        'amount': amount,
+        'currency': currency,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createInvestmentPaymentIntent({
+    required int investmentId,
+    required double amount,
+    String currency = 'USD',
+  }) async {
+    try {
+      final response = await _dio.post('/payments/investment-intent', data: {
+        'investment_id': investmentId,
+        'amount': amount,
+        'currency': currency,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> confirmPayment({
+    required String paymentIntentId,
+    String? paymentMethodId,
+  }) async {
+    try {
+      final response = await _dio.post('/payments/confirm', data: {
+        'payment_intent_id': paymentIntentId,
+        if (paymentMethodId != null) 'payment_method_id': paymentMethodId,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getPaymentStatus(String paymentIntentId) async {
+    try {
+      final response = await _dio.get('/payments/status/$paymentIntentId');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<void> cancelPayment(String paymentIntentId) async {
+    try {
+      await _dio.post('/payments/cancel', data: {
+        'payment_intent_id': paymentIntentId,
+      });
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<void> refundPayment({required String paymentIntentId, double? amount}) async {
+    try {
+      await _dio.post('/payments/refund', data: {
+        'payment_intent_id': paymentIntentId,
+        if (amount != null) 'amount': amount,
+      });
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getPaymentMethods() async {
+    try {
+      final response = await _dio.get('/payments/methods');
+      return List<Map<String, dynamic>>.from(response.data['data'] ?? []);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> savePaymentMethod(Map<String, dynamic> method) async {
+    try {
+      final response = await _dio.post('/payments/methods', data: method);
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getPaymentTransactions() async {
+    try {
+      final response = await _dio.get('/payments/transactions');
+      return List<Map<String, dynamic>>.from(response.data['data'] ?? []);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getPaymentAnalytics() async {
+    try {
+      final response = await _dio.get('/payments/analytics');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  // Paystack routes
+  Future<Map<String, dynamic>> createPaystackProductPayment({
+    required int productId,
+    required double amount,
+    String currency = 'NGN',
+  }) async {
+    try {
+      final response = await _dio.post('/payments/paystack/product', data: {
+        'product_id': productId,
+        'amount': amount,
+        'currency': currency,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createPaystackInvestmentPayment({
+    required int investmentId,
+    required double amount,
+    String currency = 'NGN',
+  }) async {
+    try {
+      final response = await _dio.post('/payments/paystack/investment', data: {
+        'investment_id': investmentId,
+        'amount': amount,
+        'currency': currency,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyPaystackPayment({
+    required String reference,
+  }) async {
+    try {
+      final response = await _dio.post('/payments/paystack/verify', data: {
+        'reference': reference,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  // Escrow routes
+  Future<Map<String, dynamic>> createEscrowTransaction(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/payments/escrow/create', data: data);
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> releaseEscrowFunds(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/payments/escrow/release', data: data);
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getEscrowTransaction(String escrowId) async {
+    try {
+      final response = await _dio.get('/payments/escrow/$escrowId');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  // Wallet/Stripe
+  Future<Map<String, dynamic>> getWalletBalance() async {
+    try {
+      final response = await _dio.get('/payments/wallet-balance');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getPaymentsTransactionHistory() async {
+    try {
+      final response = await _dio.get('/payments/transaction-history');
+      return List<Map<String, dynamic>>.from(response.data['data'] ?? []);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createStripeAccount(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/payments/stripe-account', data: data);
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getStripeAccountStatus() async {
+    try {
+      final response = await _dio.get('/payments/stripe-account-status');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  // ========================================
+  // TRANSACTIONS (General) ENDPOINTS
+  // ========================================
+
+  Future<List<Map<String, dynamic>>> getTransactions() async {
+    try {
+      final response = await _dio.get('/transactions');
+      return List<Map<String, dynamic>>.from(response.data['data'] ?? []);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getTransaction(String transactionId) async {
+    try {
+      final response = await _dio.get('/transactions/$transactionId');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createTransaction(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/transactions', data: data);
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> cancelTransaction(String transactionId) async {
+    try {
+      final response = await _dio.put('/transactions/$transactionId/cancel');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<int>> exportTransactions(Map<String, dynamic> filters) async {
+    try {
+      final response = await _dio.post(
+        '/transactions/export',
+        data: filters,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return List<int>.from(response.data);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  // ========================================
   // PUBLIC MARKETPLACE ENDPOINTS (No Auth Required)
   // ========================================
 
