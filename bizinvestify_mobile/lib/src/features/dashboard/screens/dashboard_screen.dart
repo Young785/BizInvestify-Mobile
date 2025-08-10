@@ -10,6 +10,8 @@ import '../../profile/screens/profile_screen.dart';
 import '../providers/dashboard_provider.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../../core/services/api_service.dart';
+import '../../marketplace/providers/marketplace_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -53,6 +55,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     } catch (_) {}
   }
 
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,6 +182,94 @@ class DashboardContent extends ConsumerStatefulWidget {
 }
 
 class _DashboardContentState extends ConsumerState<DashboardContent> {
+  // Duplicate helper removed
+
+  Widget _buildHeroCarousel({required MarketplaceState meta}) {
+    final featured = meta.featuredProducts;
+    final trending = meta.trending;
+    final hasData = featured.isNotEmpty || trending.isNotEmpty;
+    if (!hasData) {
+      return SizedBox(
+        height: 110,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemBuilder: (_, i) => _miniAssetCard(i),
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemCount: 6,
+        ),
+      );
+    }
+
+    final cards = <Widget>[];
+    for (final p in featured.take(10)) {
+      final image = p.images.isNotEmpty ? p.images.first : null;
+      cards.add(_heroCard(title: p.name, subtitle: p.category, imageUrl: image));
+    }
+    for (final t in trending.take(10)) {
+      final title = (t['name'] ?? t['title'] ?? 'Item').toString();
+      final subtitle = (t['category'] ?? t['industry'] ?? '').toString();
+      final images = (t['images'] is List) ? List<String>.from(t['images']) : <String>[];
+      final imageUrl = images.isNotEmpty ? images.first : null;
+      cards.add(_heroCard(title: title, subtitle: subtitle, imageUrl: imageUrl));
+    }
+
+    return SizedBox(
+      height: 160,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemBuilder: (_, i) => SizedBox(width: 260, child: cards[i]),
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemCount: cards.length.clamp(0, 12),
+      ),
+    );
+  }
+
+  Widget _heroCard({required String title, required String subtitle, String? imageUrl}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 6)),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(children: [
+        Positioned.fill(
+          child: imageUrl == null
+              ? Container(color: AppColors.primary500.withOpacity(0.08))
+              : CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.cover,
+                ),
+        ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.35)],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 12,
+          right: 12,
+          bottom: 12,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppTypography.titleSmall.copyWith(color: Colors.white, fontWeight: AppTypography.bold)),
+              if (subtitle.isNotEmpty)
+                Text(subtitle, style: AppTypography.captionSmall.copyWith(color: Colors.white70)),
+            ],
+          ),
+        )
+      ]),
+    );
+  }
   @override
   void initState() {
     super.initState();
@@ -192,6 +283,7 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
+    final marketplaceMeta = ref.watch(marketplaceProvider);
     final analytics = dashboardState.analytics;
 
     return SingleChildScrollView(
@@ -285,18 +377,10 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
 
           const SizedBox(height: AppDimensions.spacing24),
 
-          // Portfolio carousel (placeholder using featured/trending marketplace later)
-          Text('My Portfolio', style: AppTypography.titleLarge.copyWith(fontWeight: AppTypography.bold)),
+          // Hero carousel (featured + trending with images)
+          Text('Highlights', style: AppTypography.titleLarge.copyWith(fontWeight: AppTypography.bold)),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 110,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemBuilder: (_, i) => _miniAssetCard(i),
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemCount: 6,
-            ),
-          ),
+          _buildHeroCarousel(meta: marketplaceMeta),
           const SizedBox(height: AppDimensions.spacing24),
 
           // Quick Actions

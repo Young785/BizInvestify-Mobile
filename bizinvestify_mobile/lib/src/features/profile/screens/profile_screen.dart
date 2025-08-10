@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../shared/widgets/buttons/primary_button.dart';
+// Removed PrimaryButton usage for logout to use outlined style
 import '../../auth/providers/auth_provider.dart';
 import '../../orders/screens/orders_screen.dart';
 import '../../wallet/screens/wallet_screen.dart';
@@ -53,8 +53,8 @@ class ProfileScreen extends ConsumerWidget {
                   
                   const SizedBox(height: 32.0),
                   
-                  // Logout Button
-                  _buildLogoutButton(context, ref, authState),
+                  // Logout Button (outlined red as in reference)
+                  _buildOutlinedLogout(context, ref, authState),
                 ],
               ),
             ),
@@ -415,21 +415,25 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context, WidgetRef ref, AuthState authState) {
-    return PrimaryButton(
-      onPressed: authState.isLoading ? null : () => _showLogoutDialog(context, ref),
-      isFullWidth: true,
-      backgroundColor: Colors.red[600],
-      child: authState.isLoading
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-          : const Text('Logout'),
+  Widget _buildOutlinedLogout(BuildContext context, WidgetRef ref, AuthState authState) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: authState.isLoading ? null : () => _showLogoutDialog(context, ref),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          side: const BorderSide(color: Colors.red),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          foregroundColor: Colors.red,
+        ),
+        child: authState.isLoading
+            ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.red)),
+              )
+            : const Text('Log Out'),
+      ),
     );
   }
 

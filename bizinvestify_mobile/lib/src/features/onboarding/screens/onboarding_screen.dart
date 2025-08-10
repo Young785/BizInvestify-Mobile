@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -20,30 +21,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final List<OnboardingPage> _pages = [
     OnboardingPage(
       title: 'Welcome to BizInvestify',
-      subtitle: 'The revolutionary platform that connects businesses with investors',
-      description: 'Whether you\'re looking to sell your business, seek investment, or find your next opportunity, we\'ve got you covered.',
-      icon: Icons.rocket_launch,
+      subtitle: 'Connect businesses with the right investors',
+      description: 'Sell products, list businesses, or invest in opportunities tailored to you.',
+      imageUrl: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1600&auto=format&fit=crop',
       color: AppColors.primary500,
     ),
     OnboardingPage(
       title: 'Sell Products & Businesses',
-      subtitle: 'List your products or entire business for sale',
-      description: 'Create professional listings with detailed information, photos, and pricing. Reach thousands of potential buyers.',
-      icon: Icons.store,
+      subtitle: 'Create professional listings with ease',
+      description: 'Add images, pricing, documents and more. Reach thousands of potential buyers.',
+      imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1600&auto=format&fit=crop',
       color: AppColors.accent500,
     ),
     OnboardingPage(
       title: 'Secure Investment',
-      subtitle: 'Find the right investors for your business',
-      description: 'Connect with verified investors who are interested in your industry. Secure funding with transparent terms.',
-      icon: Icons.trending_up,
+      subtitle: 'Verified investors. Transparent terms.',
+      description: 'Track returns and manage deals with built‑in analytics and escrow.',
+      imageUrl: 'https://images.unsplash.com/photo-1559526324-593bc073d938?q=80&w=1600&auto=format&fit=crop',
       color: AppColors.primary600,
     ),
     OnboardingPage(
-      title: 'Real-time Communication',
-      subtitle: 'Chat directly with buyers and investors',
-      description: 'Built-in messaging system lets you communicate securely with potential partners. Close deals faster.',
-      icon: Icons.chat_bubble,
+      title: 'Real‑time Communication',
+      subtitle: 'Chat and close deals faster',
+      description: 'Secure messaging, file sharing and notifications — all in one place.',
+      imageUrl: 'https://images.unsplash.com/photo-1525182008055-f88b95ff7980?q=80&w=1600&auto=format&fit=crop',
       color: AppColors.accent600,
     ),
   ];
@@ -203,18 +204,43 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Icon
+          // Illustration Image
           Container(
-            width: 120,
-            height: 120,
+            height: 260,
             decoration: BoxDecoration(
-              color: page.color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(60),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            child: Icon(
-              page.icon,
-              size: 60,
-              color: page.color,
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl: page.imageUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => Container(color: page.color.withOpacity(0.08)),
+                  errorWidget: (_, __, ___) => Container(
+                    color: page.color.withOpacity(0.08),
+                    alignment: Alignment.center,
+                    child: Icon(Icons.image_not_supported_outlined, color: page.color),
+                  ),
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withOpacity(0.25)],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           
@@ -263,14 +289,14 @@ class OnboardingPage {
   final String title;
   final String subtitle;
   final String description;
-  final IconData icon;
+  final String imageUrl;
   final Color color;
 
   OnboardingPage({
     required this.title,
     required this.subtitle,
     required this.description,
-    required this.icon,
+    required this.imageUrl,
     required this.color,
   });
 }

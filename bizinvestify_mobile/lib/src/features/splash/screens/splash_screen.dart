@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../onboarding/screens/onboarding_screen.dart';
+import '../../dashboard/screens/dashboard_screen.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -58,8 +60,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 800));
     _textController.forward();
     
-    await Future.delayed(const Duration(milliseconds: 2000));
-    _navigateToOnboarding();
+    await Future.delayed(const Duration(milliseconds: 1200));
+    // Initialize auth and route accordingly
+    try {
+      await ref.read(authProvider.notifier).initialize();
+    } catch (_) {}
+    final isAuthenticated = ref.read(isAuthenticatedProvider);
+    if (!mounted) return;
+    if (isAuthenticated) {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const DashboardScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 400),
+        ),
+      );
+    } else {
+      _navigateToOnboarding();
+    }
   }
 
   void _navigateToOnboarding() {
