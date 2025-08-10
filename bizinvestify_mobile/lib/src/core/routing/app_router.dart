@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/splash/screens/splash_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
@@ -52,9 +51,9 @@ class AppRouter {
         builder: (_) => Scaffold(body: Center(child: Text(message))),
       );
 
-  static Future<T?>? pushNamed<T>(String route, {Object? arguments}) =>
-      navigatorKey.currentState?.pushNamed<T>(route, arguments: arguments);
+  static Future<dynamic>? pushNamed(String route, {Object? arguments}) =>
+      navigatorKey.currentState?.pushNamed(route, arguments: arguments);
 
-  static Future<T?>? pushReplacementNamed<T>(String route, {Object? arguments}) =>
-      navigatorKey.currentState?.pushReplacementNamed<T>(route, arguments: arguments);
+  static Future<dynamic>? pushReplacementNamed(String route, {Object? arguments}) =>
+      navigatorKey.currentState?.pushReplacementNamed(route, arguments: arguments);
 }

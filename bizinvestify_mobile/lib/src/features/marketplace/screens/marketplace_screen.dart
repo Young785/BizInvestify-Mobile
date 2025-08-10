@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../shared/widgets/inputs/custom_text_field.dart';
 import '../widgets/product_card.dart';
 import '../widgets/business_card.dart';
 import '../providers/marketplace_provider.dart';
@@ -20,33 +19,6 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
   late TabController _tabController;
   final _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedCategory = 'All';
-  String _selectedIndustry = 'All';
-
-  final List<String> _productCategories = [
-    'All',
-    'Electronics',
-    'Fashion',
-    'Home & Garden',
-    'Sports',
-    'Books',
-    'Automotive',
-    'Health & Beauty',
-    'Toys & Games',
-  ];
-
-  final List<String> _businessIndustries = [
-    'All',
-    'Technology',
-    'Healthcare',
-    'Finance',
-    'Retail',
-    'Manufacturing',
-    'Food & Beverage',
-    'Real Estate',
-    'Education',
-    'Entertainment',
-  ];
 
   @override
   void initState() {
@@ -95,7 +67,8 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                 ),
                 onChanged: (value) {
-                  ref.read(marketplaceProvider.notifier).search(value);
+                  setState(() => _searchQuery = value);
+                  _performSearch();
                 },
               ),
             ),
@@ -264,17 +237,5 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
     }
   }
 
-  void _applyFilters() {
-    if (_tabController.index == 0) {
-      ref.read(marketplaceProvider.notifier).filterProducts(
-        category: _selectedCategory == 'All' ? null : _selectedCategory,
-        search: _searchQuery.isEmpty ? null : _searchQuery,
-      );
-    } else {
-      ref.read(marketplaceProvider.notifier).filterBusinesses(
-        industry: _selectedIndustry == 'All' ? null : _selectedIndustry,
-        search: _searchQuery.isEmpty ? null : _searchQuery,
-      );
-    }
-  }
+  // Filters are not implemented yet
 }
