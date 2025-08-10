@@ -87,6 +87,63 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     );
   }
 
+  Future<void> _requestWithdraw() async {
+    final controller = TextEditingController();
+    double? amount;
+    final res = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Withdraw Request'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Amount',
+                  hintText: 'e.g. 25',
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text('Your request will be reviewed by support.'),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Submit')),
+          ],
+        );
+      },
+    );
+    if (res != true) return;
+    amount = double.tryParse(controller.text.trim());
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid amount')));
+      return;
+    }
+
+    try {
+      await apiService.createSupportTicket(
+        title: 'Withdraw Request',
+        message: 'User requested withdrawal of $_currency ${amount.toStringAsFixed(2)}',
+        category: 'wallet',
+        priority: 'high',
+        metadata: {
+          'amount': amount,
+          'currency': _currency,
+          'type': 'withdraw_request',
+        },
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Withdraw request submitted')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -247,9 +304,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     foregroundColor: Colors.white,
                     side: BorderSide(color: Colors.white.withOpacity(0.6)),
                   ),
-                  onPressed: () {
-                    // TODO: Withdraw (requires backend flow)
-                  },
+                  onPressed: _requestWithdraw,
                   icon: const Icon(Icons.arrow_downward),
                   label: const Text('Withdraw'),
                 ),

@@ -1062,6 +1062,31 @@ class ApiService {
   }
 
   // ========================================
+  // SUPPORT ENDPOINTS
+  // ========================================
+
+  Future<Map<String, dynamic>> createSupportTicket({
+    required String title,
+    required String message,
+    String? category,
+    String? priority,
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      final response = await _dio.post('/support/tickets', data: {
+        'title': title,
+        'message': message,
+        if (category != null) 'category': category,
+        if (priority != null) 'priority': priority,
+        if (metadata != null) 'metadata': metadata,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  // ========================================
   // ERROR HANDLING
   // ========================================
 
