@@ -36,7 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       backgroundColor: AppColors.backgroundSecondary,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppDimensions.containerPaddingMobile),
           child: Form(
             key: _formKey,
             child: Column(
@@ -93,8 +93,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Email Field
                 CustomTextField(
                   controller: _emailController,
-                  labelText: 'Email Address',
-                  hintText: 'Enter your email',
+                  label: 'Email Address',
+                  hint: 'Enter your email',
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(
                     Icons.email_outlined,
@@ -116,8 +116,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Password Field
                 CustomTextField(
                   controller: _passwordController,
-                  labelText: 'Password',
-                  hintText: 'Enter your password',
+                  label: 'Password',
+                  hint: 'Enter your password',
                   obscureText: _obscurePassword,
                   prefixIcon: const Icon(
                     Icons.lock_outlined,

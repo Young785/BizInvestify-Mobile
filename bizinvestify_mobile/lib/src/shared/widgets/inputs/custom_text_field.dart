@@ -2,83 +2,45 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 
-/// Professional Custom Text Field for BizInvestify
-/// Follows Material 3 design guidelines with brand styling
-class CustomTextField extends StatefulWidget {
-  final String? labelText;
-  final String? hintText;
-  final String? errorText;
+/// Custom Text Field Widget
+class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
+  final String? label;
+  final String? hint;
+  final String? errorText;
+  final TextInputType? keyboardType;
   final bool obscureText;
-  final TextInputType keyboardType;
+  final bool enabled;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
-  final Function(String)? onChanged;
   final String? Function(String?)? validator;
-  final bool enabled;
-  final int? maxLines;
-  final int? minLines;
-  final FocusNode? focusNode;
-  final TextInputAction? textInputAction;
-  final Function(String)? onSubmitted;
-  final bool autofocus;
-  final String? helperText;
-  final EdgeInsetsGeometry? contentPadding;
+  final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
 
   const CustomTextField({
     super.key,
-    this.labelText,
-    this.hintText,
-    this.errorText,
     this.controller,
+    this.label,
+    this.hint,
+    this.errorText,
+    this.keyboardType,
     this.obscureText = false,
-    this.keyboardType = TextInputType.text,
+    this.enabled = true,
     this.prefixIcon,
     this.suffixIcon,
-    this.onChanged,
     this.validator,
-    this.enabled = true,
-    this.maxLines = 1,
-    this.minLines,
-    this.focusNode,
-    this.textInputAction,
+    this.onChanged,
     this.onSubmitted,
-    this.autofocus = false,
-    this.helperText,
-    this.contentPadding,
   });
-
-  @override
-  State<CustomTextField> createState() => _CustomTextFieldState();
-}
-
-class _CustomTextFieldState extends State<CustomTextField> {
-  late bool _obscureText;
-  late FocusNode _focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _obscureText = widget.obscureText;
-    _focusNode = widget.focusNode ?? FocusNode();
-  }
-
-  @override
-  void dispose() {
-    if (widget.focusNode == null) {
-      _focusNode.dispose();
-    }
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (widget.labelText != null) ...[
+        if (label != null) ...[
           Text(
-            widget.labelText!,
+            label!,
             style: AppTypography.labelMedium.copyWith(
               color: AppColors.textSecondary,
               fontWeight: AppTypography.medium,
@@ -86,69 +48,32 @@ class _CustomTextFieldState extends State<CustomTextField> {
           ),
           const SizedBox(height: 8.0),
         ],
-        
         TextFormField(
-          controller: widget.controller,
-          obscureText: _obscureText,
-          keyboardType: widget.keyboardType,
-          onChanged: widget.onChanged,
-          validator: widget.validator,
-          enabled: widget.enabled,
-          maxLines: widget.maxLines,
-          minLines: widget.minLines,
-          focusNode: _focusNode,
-          textInputAction: widget.textInputAction,
-          onFieldSubmitted: widget.onSubmitted,
-          autofocus: widget.autofocus,
-          
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          enabled: enabled,
+          validator: validator,
+          onChanged: onChanged,
+          onFieldSubmitted: onSubmitted,
           style: AppTypography.bodyMedium.copyWith(
-            color: widget.enabled 
-                ? AppColors.textPrimary 
-                : AppColors.textQuaternary,
+            color: enabled ? AppColors.textPrimary : AppColors.textTertiary,
           ),
-          
           decoration: InputDecoration(
-            hintText: widget.hintText,
-            errorText: widget.errorText,
-            helperText: widget.helperText,
-            
+            hintText: hint,
+            errorText: errorText,
+            prefixIcon: prefixIcon,
+            suffixIcon: suffixIcon,
             filled: true,
-            fillColor: widget.enabled 
-                ? AppColors.backgroundSecondary 
-                : AppColors.surfaceDivider,
-            
-            prefixIcon: widget.prefixIcon,
-            suffixIcon: widget.obscureText 
-                ? IconButton(
-                    icon: Icon(
-                      _obscureText ? Icons.visibility_off : Icons.visibility,
-                      color: AppColors.textTertiary,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureText = !_obscureText;
-                      });
-                    },
-                  )
-                : widget.suffixIcon,
-            
-            // Border styles
+            fillColor: enabled ? Colors.grey[50] : Colors.grey[100],
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(
-                color: AppColors.surfaceBorder,
-                width: 1.0,
-              ),
+              borderSide: BorderSide(color: Colors.grey[300]!),
             ),
-            
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(
-                color: AppColors.surfaceBorder,
-                width: 1.0,
-              ),
+              borderSide: BorderSide(color: Colors.grey[300]!),
             ),
-            
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
               borderSide: const BorderSide(
@@ -156,52 +81,20 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 width: 2.0,
               ),
             ),
-            
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
-              borderSide: const BorderSide(
-                color: AppColors.error500,
-                width: 1.0,
-              ),
+              borderSide: const BorderSide(color: AppColors.error500,
             ),
-            
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: const BorderSide(
-                color: AppColors.error500,
-                width: 2.0,
-              ),
-            ),
-            
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(
-                color: AppColors.surfaceDivider,
-                width: 1.0,
-              ),
-            ),
-            
-            contentPadding: widget.contentPadding ?? const EdgeInsets.symmetric(
+            contentPadding: const EdgeInsets.symmetric(
               horizontal: 16.0,
               vertical: 16.0,
             ),
-            
-            // Text styles
             hintStyle: AppTypography.bodyMedium.copyWith(
               color: AppColors.textQuaternary,
             ),
-            
             errorStyle: AppTypography.captionMedium.copyWith(
-              color: AppColors.error500,
+              color: AppColors.error500
             ),
-            
-            helperStyle: AppTypography.captionMedium.copyWith(
-              color: AppColors.textTertiary,
-            ),
-            
-            // Icon styling
-            prefixIconColor: AppColors.textTertiary,
-            suffixIconColor: AppColors.textTertiary,
           ),
         ),
       ],
@@ -209,106 +102,185 @@ class _CustomTextFieldState extends State<CustomTextField> {
   }
 }
 
-/// Specialized Email Input Field
-class EmailTextField extends StatelessWidget {
-  final String? labelText;
-  final String? hintText;
+/// Search Text Field Widget
+/// Specialized text field for search functionality
+class SearchTextField extends StatelessWidget {
   final TextEditingController? controller;
-  final Function(String)? onChanged;
-  final String? Function(String?)? validator;
-  final FocusNode? focusNode;
-  final TextInputAction? textInputAction;
-  final Function(String)? onSubmitted;
+  final String? hint;
+  final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
+  final VoidCallback? onClear;
+  final bool showClearButton;
 
-  const EmailTextField({
+  const SearchTextField({
     super.key,
-    this.labelText,
-    this.hintText = 'Enter your email address',
     this.controller,
+    this.hint,
     this.onChanged,
-    this.validator,
-    this.focusNode,
-    this.textInputAction,
     this.onSubmitted,
+    this.onClear,
+    this.showClearButton = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return CustomTextField(
-      labelText: labelText ?? 'Email Address',
-      hintText: hintText,
+    return TextField(
       controller: controller,
-      keyboardType: TextInputType.emailAddress,
-      prefixIcon: const Icon(Icons.email_outlined),
       onChanged: onChanged,
-      validator: validator ?? _defaultEmailValidator,
-      focusNode: focusNode,
-      textInputAction: textInputAction ?? TextInputAction.next,
       onSubmitted: onSubmitted,
+      style: AppTypography.bodyMedium,
+      decoration: InputDecoration(
+        hintText: hint ?? 'Search...',
+        prefixIcon: const Icon(
+          Icons.search,
+          color: AppColors.textTertiary,
+        ),
+        suffixIcon: showClearButton && controller?.text.isNotEmpty == true
+            ? IconButton(
+                icon: const Icon(
+                  Icons.clear,
+                  color: AppColors.textTertiary,
+                ),
+                onPressed: () {
+                  controller?.clear();
+                  onClear?.call();
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: Colors.grey[100],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.0),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.0),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.0),
+          borderSide: const BorderSide(
+            color: AppColors.primary500,
+            width: 0.5,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16.0,
+          vertical: 12.0,
+        ),
+        hintStyle: AppTypography.bodyMedium.copyWith(
+          color: AppColors.textQuaternary,
+        ),
+      ),
     );
-  }
-
-  String? _defaultEmailValidator(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Email address is required';
-    }
-    
-    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-      return 'Please enter a valid email address';
-    }
-    
-    return null;
   }
 }
 
-/// Specialized Password Input Field
-class PasswordTextField extends StatelessWidget {
-  final String? labelText;
-  final String? hintText;
+/// Password Text Field Widget
+/// Specialized text field for password input with visibility toggle
+class PasswordTextField extends StatefulWidget {
   final TextEditingController? controller;
-  final Function(String)? onChanged;
+  final String? label;
+  final String? hint;
+  final String? errorText;
   final String? Function(String?)? validator;
-  final FocusNode? focusNode;
-  final TextInputAction? textInputAction;
-  final Function(String)? onSubmitted;
+  final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
+  final bool enabled;
 
   const PasswordTextField({
     super.key,
-    this.labelText,
-    this.hintText = 'Enter your password',
     this.controller,
-    this.onChanged,
+    this.label,
+    this.hint,
+    this.errorText,
     this.validator,
-    this.focusNode,
-    this.textInputAction,
+    this.onChanged,
     this.onSubmitted,
+    this.enabled = true,
+  });
+
+  @override
+  State<PasswordTextField> createState() => _PasswordTextFieldState();
+}
+
+class _PasswordTextFieldState extends State<PasswordTextField> {
+  bool _obscureText = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomTextField(
+      controller: widget.controller,
+      label: widget.label,
+      hint: widget.hint,
+      errorText: widget.errorText,
+      keyboardType: TextInputType.visiblePassword,
+      obscureText: _obscureText,
+      enabled: widget.enabled,
+      validator: widget.validator,
+      onChanged: widget.onChanged,
+      onSubmitted: widget.onSubmitted,
+      suffixIcon: IconButton(
+        icon: Icon(
+          _obscureText ? Icons.visibility : Icons.visibility_off,
+          color: AppColors.textTertiary,
+        ),
+        onPressed: () {
+          setState(() {
+            _obscureText = !_obscureText;
+          });
+        },
+      ),
+    );
+  }
+}
+
+/// Email Text Field Widget
+/// Specialized text field for email input with validation
+class EmailTextField extends StatelessWidget {
+  final TextEditingController? controller;
+  final String? label;
+  final String? hint;
+  final String? errorText;
+  final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
+  final bool enabled;
+
+  const EmailTextField({
+    super.key,
+    this.controller,
+    this.label,
+    this.hint,
+    this.errorText,
+    this.onChanged,
+    this.onSubmitted,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return CustomTextField(
-      labelText: labelText ?? 'Password',
-      hintText: hintText,
       controller: controller,
-      obscureText: true,
-      prefixIcon: const Icon(Icons.lock_outline),
+      label: label,
+      hint: hint,
+      errorText: errorText,
+      keyboardType: TextInputType.emailAddress,
+      enabled: enabled,
       onChanged: onChanged,
-      validator: validator ?? _defaultPasswordValidator,
-      focusNode: focusNode,
-      textInputAction: textInputAction ?? TextInputAction.done,
       onSubmitted: onSubmitted,
+      prefixIcon: const Icon(
+        Icons.email_outlined,
+        color: AppColors.textTertiary,
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Email is required';
+        }
+        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+          return 'Please enter a valid email';
+        }
+        return null;
+      },
     );
-  }
-
-  String? _defaultPasswordValidator(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Password is required';
-    }
-    
-    if (value.length < 8) {
-      return 'Password must be at least 8 characters long';
-    }
-    
-    return null;
   }
 }

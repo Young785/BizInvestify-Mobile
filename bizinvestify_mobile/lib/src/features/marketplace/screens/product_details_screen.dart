@@ -480,7 +480,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen>
       child: Row(
         children: [
           Text(
-            '$label:',
+            '$labelText:',
             style: TextStyle(
               fontWeight: FontWeight.w500,
               color: Colors.grey[700],

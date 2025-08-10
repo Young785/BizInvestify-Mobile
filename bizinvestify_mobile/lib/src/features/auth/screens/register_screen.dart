@@ -50,7 +50,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppDimensions.containerPaddingMobile),
           child: Form(
             key: _formKey,
             child: Column(
@@ -104,8 +104,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Expanded(
                       child: CustomTextField(
                         controller: _firstNameController,
-                        labelText: 'First Name',
-                        hintText: 'Enter your first name',
+                        label: 'First Name',
+                        hint: 'Enter your first name',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'First name is required';
@@ -118,8 +118,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Expanded(
                       child: CustomTextField(
                         controller: _lastNameController,
-                        labelText: 'Last Name',
-                        hintText: 'Enter your last name',
+                        label: 'Last Name',
+                        hint: 'Enter your last name',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Last name is required';
@@ -136,8 +136,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Email Field
                 CustomTextField(
                   controller: _emailController,
-                  labelText: 'Email Address',
-                  hintText: 'Enter your email',
+                  label: 'Email Address',
+                  hint: 'Enter your email',
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(
                     Icons.email_outlined,
@@ -159,8 +159,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Phone Field
                 CustomTextField(
                   controller: _phoneController,
-                  labelText: 'Phone Number (Optional)',
-                  hintText: 'Enter your phone number',
+                  label: 'Phone Number (Optional)',
+                  hint: 'Enter your phone number',
                   keyboardType: TextInputType.phone,
                   prefixIcon: const Icon(
                     Icons.phone_outlined,
@@ -225,8 +225,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Password Field
                 CustomTextField(
                   controller: _passwordController,
-                  labelText: 'Password',
-                  hintText: 'Create a password',
+                  label: 'Password',
+                  hint: 'Create a password',
                   obscureText: _obscurePassword,
                   prefixIcon: const Icon(
                     Icons.lock_outlined,
@@ -259,8 +259,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Confirm Password Field
                 CustomTextField(
                   controller: _confirmPasswordController,
-                  labelText: 'Confirm Password',
-                  hintText: 'Confirm your password',
+                  label: 'Confirm Password',
+                  hint: 'Confirm your password',
                   obscureText: _obscureConfirmPassword,
                   prefixIcon: const Icon(
                     Icons.lock_outlined,

@@ -126,7 +126,7 @@ class BusinessCard extends StatelessWidget {
                   // Valuation
                   Expanded(
                     child: _buildFinancialItem(
-                      label: 'Valuation',
+                      labelText: 'Valuation',
                       value: '\$${(business.valuation / 1000000).toStringAsFixed(1)}M',
                       icon: Icons.assessment,
                       color: AppColors.primary500,
@@ -138,7 +138,7 @@ class BusinessCard extends StatelessWidget {
                   // Funding Goal
                   Expanded(
                     child: _buildFinancialItem(
-                      label: 'Funding Goal',
+                      labelText: 'Funding Goal',
                       value: '\$${(business.fundingGoal / 1000).toStringAsFixed(0)}K',
                       icon: Icons.trending_up,
                       color: AppColors.secondary500,
@@ -150,7 +150,7 @@ class BusinessCard extends StatelessWidget {
                   // Equity Offered
                   Expanded(
                     child: _buildFinancialItem(
-                      label: 'Equity',
+                      labelText: 'Equity',
                       value: '${business.equityOffered.toStringAsFixed(1)}%',
                       icon: Icons.pie_chart,
                       color: AppColors.primary600,

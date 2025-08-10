@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 /// BizInvestify Typography System
@@ -19,7 +20,7 @@ class AppTypography {
     fontSize: 64,
     fontWeight: bold,
     height: 1.1,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
   static const TextStyle displayMedium = TextStyle(
@@ -27,7 +28,7 @@ class AppTypography {
     fontSize: 48,
     fontWeight: bold,
     height: 1.2,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
   static const TextStyle displaySmall = TextStyle(
@@ -35,7 +36,7 @@ class AppTypography {
     fontSize: 40,
     fontWeight: bold,
     height: 1.2,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
   // Headline Text Styles
@@ -44,7 +45,7 @@ class AppTypography {
     fontSize: 32,
     fontWeight: bold,
     height: 1.3,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
   static const TextStyle headlineMedium = TextStyle(
@@ -52,7 +53,7 @@ class AppTypography {
     fontSize: 28,
     fontWeight: semibold,
     height: 1.3,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
   static const TextStyle headlineSmall = TextStyle(
@@ -60,7 +61,7 @@ class AppTypography {
     fontSize: 24,
     fontWeight: semibold,
     height: 1.4,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
   // Title Text Styles
@@ -69,7 +70,7 @@ class AppTypography {
     fontSize: 22,
     fontWeight: semibold,
     height: 1.4,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
   static const TextStyle titleMedium = TextStyle(
@@ -77,7 +78,7 @@ class AppTypography {
     fontSize: 20,
     fontWeight: medium,
     height: 1.4,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
   static const TextStyle titleSmall = TextStyle(
@@ -85,7 +86,7 @@ class AppTypography {
     fontSize: 18,
     fontWeight: medium,
     height: 1.4,
-    color: AppColors.textPrimary,
+    color: AppColors.text800,
   );
 
   // Body Text Styles
@@ -94,7 +95,7 @@ class AppTypography {
     fontSize: 18,
     fontWeight: regular,
     height: 1.5,
-    color: AppColors.textSecondary,
+    color: AppColors.text700,
   );
 
   static const TextStyle bodyMedium = TextStyle(
@@ -102,7 +103,7 @@ class AppTypography {
     fontSize: 16,
     fontWeight: regular,
     height: 1.5,
-    color: AppColors.textSecondary,
+    color: AppColors.text700,
   );
 
   static const TextStyle bodySmall = TextStyle(
@@ -110,7 +111,7 @@ class AppTypography {
     fontSize: 14,
     fontWeight: regular,
     height: 1.5,
-    color: AppColors.textTertiary,
+    color: AppColors.text600,
   );
 
   // Label Text Styles
@@ -119,7 +120,7 @@ class AppTypography {
     fontSize: 16,
     fontWeight: medium,
     height: 1.4,
-    color: AppColors.textSecondary,
+    color: AppColors.text700,
   );
 
   static const TextStyle labelMedium = TextStyle(
@@ -127,7 +128,7 @@ class AppTypography {
     fontSize: 14,
     fontWeight: medium,
     height: 1.4,
-    color: AppColors.textSecondary,
+    color: AppColors.text700,
   );
 
   static const TextStyle labelSmall = TextStyle(
@@ -135,7 +136,7 @@ class AppTypography {
     fontSize: 12,
     fontWeight: medium,
     height: 1.4,
-    color: AppColors.textTertiary,
+    color: AppColors.text600,
   );
 
   // Caption Text Styles
@@ -144,7 +145,7 @@ class AppTypography {
     fontSize: 14,
     fontWeight: regular,
     height: 1.4,
-    color: AppColors.textTertiary,
+    color: AppColors.text500,
   );
 
   static const TextStyle captionMedium = TextStyle(
@@ -152,7 +153,7 @@ class AppTypography {
     fontSize: 12,
     fontWeight: regular,
     height: 1.4,
-    color: AppColors.textTertiary,
+    color: AppColors.text500,
   );
 
   static const TextStyle captionSmall = TextStyle(
@@ -160,7 +161,7 @@ class AppTypography {
     fontSize: 10,
     fontWeight: regular,
     height: 1.4,
-    color: AppColors.textQuaternary,
+    color: AppColors.text400,
   );
 
   // Button Text Styles
@@ -193,14 +194,14 @@ class AppTypography {
     return baseStyle.copyWith(
       foreground: Paint()
         ..shader = const LinearGradient(
-          colors: [AppColors.primary500, AppColors.secondary500],
+          colors: [AppColors.primary500, AppColors.accent500],
         ).createShader(const Rect.fromLTWH(0, 0, 200, 70)),
     );
   }
 
   // Complete Text Theme
   static TextTheme get textTheme {
-    return const TextTheme(
+    final base = const TextTheme(
       displayLarge: displayLarge,
       displayMedium: displayMedium,
       displaySmall: displaySmall,
@@ -217,51 +218,7 @@ class AppTypography {
       labelMedium: labelMedium,
       labelSmall: labelSmall,
     );
-  }
-  
-  // === UTILITY METHODS ===
-  
-  // Create branded text style
-  static TextStyle branded(TextStyle baseStyle) {
-    return baseStyle.copyWith(
-      color: AppColors.primary500,
-      fontWeight: semibold,
-    );
-  }
-  
-  // Create muted text style
-  static TextStyle muted(TextStyle baseStyle) {
-    return baseStyle.copyWith(
-      color: AppColors.textMuted,
-    );
-  }
-  
-  // Create emphasized text style
-  static TextStyle emphasized(TextStyle baseStyle) {
-    return baseStyle.copyWith(
-      fontWeight: semibold,
-      color: AppColors.textPrimary,
-    );
-  }
-  
-  // Create success text style
-  static TextStyle success(TextStyle baseStyle) {
-    return baseStyle.copyWith(
-      color: AppColors.success500,
-    );
-  }
-  
-  // Create error text style
-  static TextStyle error(TextStyle baseStyle) {
-    return baseStyle.copyWith(
-      color: AppColors.error500,
-    );
-  }
-  
-  // Create warning text style
-  static TextStyle warning(TextStyle baseStyle) {
-    return baseStyle.copyWith(
-      color: AppColors.warning500,
-    );
+    // Apply GoogleFonts.inter across the theme for consistent rendering
+    return GoogleFonts.interTextTheme(base);
   }
 }
