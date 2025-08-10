@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/services/api_service.dart';
 import '../../marketplace/widgets/payment_sheet.dart';
+import 'package:flutter/services.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -44,6 +45,46 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     } finally {
       setState(() => _loading = false);
     }
+  }
+
+  Future<double?> _promptTopUpAmount() async {
+    final controller = TextEditingController(text: '50');
+    double? parsed;
+    return showDialog<double>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Enter Top-up Amount'),
+          content: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+            ],
+            decoration: const InputDecoration(
+              prefixText: ' 4 ',
+              hintText: 'e.g. 50',
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () {
+                parsed = double.tryParse(controller.text.trim());
+                if (parsed == null || parsed! <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Enter a valid amount')),
+                  );
+                  return;
+                }
+                Navigator.of(context).pop(parsed);
+              },
+              child: const Text('Continue'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -168,6 +209,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     side: BorderSide(color: Colors.white.withOpacity(0.6)),
                   ),
                   onPressed: () async {
+                    final amount = await _promptTopUpAmount();
+                    if (amount == null) return;
                     final result = await showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
@@ -179,9 +222,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                         padding: EdgeInsets.only(
                           bottom: MediaQuery.of(context).viewInsets.bottom,
                         ),
-                        child: const PaymentSheet(
-                          amount: 50.0, // Example top-up; ideally show amount entry UI
-                          currency: 'USD',
+                        child: PaymentSheet(
+                          amount: amount,
+                          currency: _currency,
                           contextType: PaymentContext.walletTopUp,
                         ),
                       ),
