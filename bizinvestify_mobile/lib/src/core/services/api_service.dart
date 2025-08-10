@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_colors.dart';
 
 class ApiService {
-  static const String _baseUrl = 'https://api.bizinvestify.com/api';
+  static const String _baseUrl = 'http://127.0.0.1:8000/api';
   static const String _tokenKey = 'auth_token';
   
   late final Dio _dio;

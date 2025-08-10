@@ -6,6 +6,8 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/buttons/primary_button.dart';
 import '../../marketplace/screens/marketplace_screen.dart';
 import '../../messaging/screens/messages_screen.dart';
+import '../../profile/screens/profile_screen.dart';
+import '../providers/dashboard_provider.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -21,7 +23,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     const DashboardContent(),
     const MarketplaceScreen(),
     const MessagesScreen(),
-    const Center(child: Text('Profile')),
+    const ProfileScreen(),
   ];
 
   @override
@@ -79,11 +81,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-class DashboardContent extends StatelessWidget {
+class DashboardContent extends ConsumerStatefulWidget {
   const DashboardContent({super.key});
 
   @override
+  ConsumerState<DashboardContent> createState() => _DashboardContentState();
+}
+
+class _DashboardContentState extends ConsumerState<DashboardContent> {
+  @override
+  void initState() {
+    super.initState();
+    _loadAnalytics();
+  }
+
+  void _loadAnalytics() {
+    ref.read(dashboardProvider.notifier).loadAnalytics();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final dashboardState = ref.watch(dashboardProvider);
+    final analytics = dashboardState.analytics;
+    
     return CustomScrollView(
       slivers: [
         // App Bar
@@ -150,12 +170,12 @@ class DashboardContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Welcome back, User!',
-                      style: AppTypography.headlineSmall.copyWith(
-                        fontWeight: AppTypography.bold,
+                                          Text(
+                        'Welcome back, ${analytics != null ? 'User' : 'User'}!',
+                        style: AppTypography.headlineSmall.copyWith(
+                          fontWeight: AppTypography.bold,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: AppDimensions.spacing8),
                     Text(
                       'Here\'s what\'s happening with your business today.',
@@ -169,49 +189,52 @@ class DashboardContent extends StatelessWidget {
               
               const SizedBox(height: AppDimensions.spacing24),
               
-              // Stats Cards
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: AppDimensions.spacing16,
-                mainAxisSpacing: AppDimensions.spacing16,
-                childAspectRatio: 1.6,
-                children: [
-                  _buildStatsCard(
-                    title: 'Total Revenue',
-                    value: '\$12,450',
-                    icon: Icons.attach_money,
-                    color: AppColors.accent500,
-                    trend: '+12.5%',
-                    trendUp: true,
+                              // Stats Cards
+                if (dashboardState.isLoading)
+                  const Center(child: CircularProgressIndicator())
+                else
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    crossAxisSpacing: AppDimensions.spacing16,
+                    mainAxisSpacing: AppDimensions.spacing16,
+                    childAspectRatio: 1.6,
+                    children: [
+                      _buildStatsCard(
+                        title: 'Total Revenue',
+                        value: '\$${analytics?.totalRevenue.toStringAsFixed(0) ?? '0'}',
+                        icon: Icons.attach_money,
+                        color: AppColors.accent500,
+                        trend: '+12.5%',
+                        trendUp: true,
+                      ),
+                      _buildStatsCard(
+                        title: 'Total Products',
+                        value: '${analytics?.totalProducts ?? 0}',
+                        icon: Icons.inventory,
+                        color: AppColors.primary500,
+                        trend: '+8.2%',
+                        trendUp: true,
+                      ),
+                      _buildStatsCard(
+                        title: 'Active Listings',
+                        value: '${analytics?.activeListings ?? 0}',
+                        icon: Icons.store,
+                        color: AppColors.accent600,
+                        trend: '+5.1%',
+                        trendUp: true,
+                      ),
+                      _buildStatsCard(
+                        title: 'Messages',
+                        value: '${analytics?.unreadMessages ?? 0}',
+                        icon: Icons.message,
+                        color: AppColors.primary600,
+                        trend: 'New',
+                        trendUp: false,
+                      ),
+                    ],
                   ),
-                  _buildStatsCard(
-                    title: 'Total Products',
-                    value: '24',
-                    icon: Icons.inventory,
-                    color: AppColors.primary500,
-                    trend: '+8.2%',
-                    trendUp: true,
-                  ),
-                  _buildStatsCard(
-                    title: 'Active Listings',
-                    value: '18',
-                    icon: Icons.store,
-                    color: AppColors.accent600,
-                    trend: '+5.1%',
-                    trendUp: true,
-                  ),
-                  _buildStatsCard(
-                    title: 'Messages',
-                    value: '5',
-                    icon: Icons.message,
-                    color: AppColors.primary600,
-                    trend: 'New',
-                    trendUp: false,
-                  ),
-                ],
-              ),
               
               const SizedBox(height: AppDimensions.spacing24),
               

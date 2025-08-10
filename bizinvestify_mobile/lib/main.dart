@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'src/core/theme/app_theme.dart';
-import 'src/features/splash/screens/splash_screen.dart';
+import 'src/core/routing/app_router.dart';
 
 void main() {
   runApp(
@@ -28,7 +28,8 @@ class BizInvestifyApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: ThemeMode.light,
-          home: const SplashScreen(),
+          initialRoute: AppRouter.splash,
+          onGenerateRoute: AppRouter.generateRoute,
         );
       },
     );
