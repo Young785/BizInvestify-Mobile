@@ -60,7 +60,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const SidebarDrawer(),
-      backgroundColor: AppColors.background200,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('Dashboard', style: AppTypography.titleLarge.copyWith(fontWeight: AppTypography.bold)),
         leading: Builder(
@@ -97,9 +97,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           _badgeRefreshFuture ??= _refreshBadges();
         },
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primary500,
-        unselectedItemColor: AppColors.text400,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
         selectedLabelStyle: const TextStyle(
           fontSize: 12,
           fontWeight: AppTypography.medium,

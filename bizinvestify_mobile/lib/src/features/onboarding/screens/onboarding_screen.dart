@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -21,30 +20,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final List<OnboardingPage> _pages = [
     OnboardingPage(
       title: 'Welcome to BizInvestify',
-      subtitle: 'Connect businesses with the right investors',
-      description: 'Sell products, list businesses, or invest in opportunities tailored to you.',
-      imageUrl: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1600&auto=format&fit=crop',
+      subtitle: 'The revolutionary platform that connects businesses with investors',
+      description: 'Whether you\'re looking to sell your business, seek investment, or find your next opportunity, we\'ve got you covered.',
+      icon: Icons.rocket_launch,
       color: AppColors.primary500,
     ),
     OnboardingPage(
       title: 'Sell Products & Businesses',
-      subtitle: 'Create professional listings with ease',
-      description: 'Add images, pricing, documents and more. Reach thousands of potential buyers.',
-      imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1600&auto=format&fit=crop',
+      subtitle: 'List your products or entire business for sale',
+      description: 'Create professional listings with detailed information, photos, and pricing. Reach thousands of potential buyers.',
+      icon: Icons.store,
       color: AppColors.accent500,
     ),
     OnboardingPage(
       title: 'Secure Investment',
-      subtitle: 'Verified investors. Transparent terms.',
-      description: 'Track returns and manage deals with built‑in analytics and escrow.',
-      imageUrl: 'https://images.unsplash.com/photo-1559526324-593bc073d938?q=80&w=1600&auto=format&fit=crop',
+      subtitle: 'Find the right investors for your business',
+      description: 'Connect with verified investors who are interested in your industry. Secure funding with transparent terms.',
+      icon: Icons.trending_up,
       color: AppColors.primary600,
     ),
     OnboardingPage(
-      title: 'Real‑time Communication',
-      subtitle: 'Chat and close deals faster',
-      description: 'Secure messaging, file sharing and notifications — all in one place.',
-      imageUrl: 'https://images.unsplash.com/photo-1525182008055-f88b95ff7980?q=80&w=1600&auto=format&fit=crop',
+      title: 'Real-time Communication',
+      subtitle: 'Chat directly with buyers and investors',
+      description: 'Built-in messaging system lets you communicate securely with potential partners. Close deals faster.',
+      icon: Icons.chat_bubble,
       color: AppColors.accent600,
     ),
   ];
@@ -199,88 +198,62 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildPage(OnboardingPage page) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary50, AppColors.background200],
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.spacing24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Illustration Image with rounded mask
-            Container(
-              height: 280,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadowMedium,
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  CachedNetworkImage(
-                    imageUrl: page.imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(color: page.color.withOpacity(0.08)),
-                    errorWidget: (_, __, ___) => Container(
-                      color: page.color.withOpacity(0.08),
-                      alignment: Alignment.center,
-                      child: Icon(Icons.image_not_supported_outlined, color: page.color),
-                    ),
-                  ),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, page.color.withOpacity(0.25)],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+    return Padding(
+      padding: const EdgeInsets.all(AppDimensions.spacing24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: page.color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(60),
             ),
-
-            const SizedBox(height: AppDimensions.spacing24),
-
-            // Title and subtitle over colored chip
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: page.color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                page.subtitle,
-                style: AppTypography.captionMedium.copyWith(color: page.color, fontWeight: AppTypography.semibold),
-              ),
+            child: Icon(
+              page.icon,
+              size: 60,
+              color: page.color,
             ),
-            const SizedBox(height: 10),
-            Text(
-              page.title,
-              style: AppTypography.headlineMedium.copyWith(fontWeight: AppTypography.bold, color: AppColors.text800),
-              textAlign: TextAlign.center,
+          ),
+          
+          const SizedBox(height: AppDimensions.spacing32),
+          
+          // Title
+          Text(
+            page.title,
+            style: AppTypography.headlineMedium.copyWith(
+              fontWeight: AppTypography.bold,
+              color: AppColors.text800,
             ),
-
-            const SizedBox(height: AppDimensions.spacing16),
-            Text(
-              page.description,
-              style: AppTypography.bodyLarge.copyWith(color: AppColors.text600, height: 1.6),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          
+          const SizedBox(height: AppDimensions.spacing16),
+          
+          // Subtitle
+          Text(
+            page.subtitle,
+            style: AppTypography.titleMedium.copyWith(
+              color: page.color,
+              fontWeight: AppTypography.semibold,
             ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+          
+          const SizedBox(height: AppDimensions.spacing24),
+          
+          // Description
+          Text(
+            page.description,
+            style: AppTypography.bodyLarge.copyWith(
+              color: AppColors.text600,
+              height: 1.6,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -290,14 +263,14 @@ class OnboardingPage {
   final String title;
   final String subtitle;
   final String description;
-  final String imageUrl;
+  final IconData icon;
   final Color color;
 
   OnboardingPage({
     required this.title,
     required this.subtitle,
     required this.description,
-    required this.imageUrl,
+    required this.icon,
     required this.color,
   });
 }
