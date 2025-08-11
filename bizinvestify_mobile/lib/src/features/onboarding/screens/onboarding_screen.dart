@@ -13,9 +13,12 @@ class OnboardingScreen extends ConsumerStatefulWidget {
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
+    with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  late final AnimationController _bgController;
+  late final Animation<double> _bgAnim;
 
   final List<OnboardingPage> _pages = [
     OnboardingPage(
@@ -50,6 +53,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   void dispose() {
+    _bgController.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -84,6 +88,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // No-op: controller already initialized in initState; keep build lean.
     return Scaffold(
       backgroundColor: AppColors.background200,
       body: SafeArea(
@@ -198,112 +203,124 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildPage(OnboardingPage page) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary50, AppColors.accent50],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Soft gradient blobs for depth
-          Positioned(
-            top: -40,
-            right: -40,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [AppColors.accent200, Colors.transparent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+    _ensureAnimation();
+    return AnimatedBuilder(
+      animation: _bgAnim,
+      builder: (context, _) {
+        final t = _bgAnim.value;
+        final topBlobOffset = Offset(20 * t, -40 + 10 * t);
+        final bottomBlobOffset = Offset(-50 + 12 * (1 - t), -50);
+        final begin = Alignment(-0.9 + 0.2 * t, -1 + 0.2 * t);
+        final end = Alignment(1 - 0.2 * t, 1 - 0.2 * t);
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: begin,
+              end: end,
+              colors: [AppColors.primary50, AppColors.accent50.withOpacity(0.9)],
             ),
           ),
-          Positioned(
-            bottom: -50,
-            left: -50,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [AppColors.primary200, Colors.transparent],
-                  begin: Alignment.bottomRight,
-                  end: Alignment.topLeft,
-                ),
+          child: Stack(
+            children: [
+              // Animated gradient blobs for depth (indigo/purple, translucent)
+              Positioned(
+                top: topBlobOffset.dy,
+                right: topBlobOffset.dx,
+                child: _blob(180, const [AppColors.accent200, Colors.transparent]),
               ),
-            ),
-          ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(AppDimensions.spacing24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Icon on gradient badge
-                Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    gradient: LinearGradient(
-                      colors: [page.color.withOpacity(0.20), AppColors.primary500.withOpacity(0.18)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+              Positioned(
+                bottom: bottomBlobOffset.dy,
+                left: bottomBlobOffset.dx,
+                child: _blob(220, const [AppColors.primary200, Colors.transparent]),
+              ),
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(AppDimensions.spacing24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Icon on gradient badge (slight breathing scale)
+                    Transform.scale(
+                      scale: 0.98 + 0.04 * (1 - (t - 0.5).abs() * 2),
+                      child: Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(28),
+                          gradient: LinearGradient(
+                            colors: [page.color.withOpacity(0.22), AppColors.primary500.withOpacity(0.18)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(color: AppColors.shadowMedium, blurRadius: 24, offset: const Offset(0, 10)),
+                          ],
+                        ),
+                        child: Icon(page.icon, size: 64, color: page.color),
+                      ),
                     ),
-                    boxShadow: [
-                      BoxShadow(color: AppColors.shadowMedium, blurRadius: 24, offset: const Offset(0, 10)),
-                    ],
-                  ),
-                  child: Icon(page.icon, size: 64, color: page.color),
+
+                    const SizedBox(height: AppDimensions.spacing32),
+
+                    Text(
+                      page.title,
+                      style: AppTypography.headlineMedium.copyWith(
+                        fontWeight: AppTypography.bold,
+                        color: AppColors.text800,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: AppDimensions.spacing16),
+                    Text(
+                      page.subtitle,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: page.color,
+                        fontWeight: AppTypography.semibold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: AppDimensions.spacing24),
+                    Text(
+                      page.description,
+                      style: AppTypography.bodyLarge.copyWith(
+                        color: AppColors.text600,
+                        height: 1.6,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-
-                const SizedBox(height: AppDimensions.spacing32),
-
-                // Title
-                Text(
-                  page.title,
-                  style: AppTypography.headlineMedium.copyWith(
-                    fontWeight: AppTypography.bold,
-                    color: AppColors.text800,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: AppDimensions.spacing16),
-
-                // Subtitle
-                Text(
-                  page.subtitle,
-                  style: AppTypography.titleMedium.copyWith(
-                    color: page.color,
-                    fontWeight: AppTypography.semibold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: AppDimensions.spacing24),
-
-                // Description
-                Text(
-                  page.description,
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppColors.text600,
-                    height: 1.6,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  // Ensure animation controller is created once
+  void _ensureAnimation() {
+    if (!(_bgController.isAnimating || _bgController.isCompleted || _bgController.isDismissed)) {
+      // no-op; guard to satisfy analyzer when hot-reload
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _bgController = AnimationController(vsync: this, duration: const Duration(seconds: 8))..repeat(reverse: true);
+    _bgAnim = CurvedAnimation(parent: _bgController, curve: Curves.easeInOut);
+  }
+
+  Widget _blob(double size, List<Color> colors) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
       ),
     );
   }
