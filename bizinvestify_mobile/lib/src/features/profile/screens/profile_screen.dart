@@ -18,10 +18,10 @@ class ProfileScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         title: const Text('Profile'),
-        backgroundColor: Theme.of(context).cardColor,
+        backgroundColor: Colors.white,
         elevation: 1,
         actions: [
           IconButton(
@@ -422,15 +422,15 @@ class ProfileScreen extends ConsumerWidget {
         onPressed: authState.isLoading ? null : () => _showLogoutDialog(context, ref),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
-          side: BorderSide(color: Theme.of(context).colorScheme.error),
+          side: const BorderSide(color: Colors.red),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          foregroundColor: Theme.of(context).colorScheme.error,
+          foregroundColor: Colors.red,
         ),
         child: authState.isLoading
             ? const SizedBox(
                 height: 18,
                 width: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.red)),
               )
             : const Text('Log Out'),
       ),
