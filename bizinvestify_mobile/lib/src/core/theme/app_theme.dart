@@ -7,34 +7,41 @@ import '../constants/app_dimensions.dart';
 /// Material 3 design system with custom brand colors
 class AppTheme {
   static ThemeData get lightTheme {
+    // Strictly follow provided light color scheme
+    const Color kPrimary = Color(0xFF1E88E5);
+    const Color kSecondary = Color(0xFF00BFA5);
+    const Color kBackground = Color(0xFFF9FAFB);
+    const Color kSurface = Colors.white;
+    const Color kOnSurface = Color(0xFF1A1A1A);
+    const Color kError = Color(0xFFD32F2F);
+
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.light,
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary500,
-        brightness: Brightness.light,
-        primary: AppColors.primary500,
-        secondary: AppColors.accent500,
-        surface: AppColors.background50,
-        background: AppColors.background200,
-        error: AppColors.error,
+      primaryColor: kPrimary,
+      scaffoldBackgroundColor: kBackground,
+      cardColor: kSurface,
+      fontFamily: 'Inter',
+      colorScheme: const ColorScheme.light(
+        primary: kPrimary,
         onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: AppColors.text800,
-        onBackground: AppColors.text800,
-        onError: Colors.white,
+        secondary: kSecondary,
+        background: kBackground,
+        surface: kSurface,
+        onSurface: kOnSurface,
+        error: kError,
       ),
-      scaffoldBackgroundColor: AppColors.background200,
       textTheme: AppTypography.textTheme,
 
       // App Bar Theme
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.text800,
+        backgroundColor: kSurface,
+        foregroundColor: kOnSurface,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: AppTypography.titleMedium.copyWith(
-          color: AppColors.text800,
+           color: kOnSurface,
           fontWeight: AppTypography.semibold,
         ),
         iconTheme: const IconThemeData(
@@ -46,7 +53,7 @@ class AppTheme {
       // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary500,
+           backgroundColor: kPrimary,
           foregroundColor: Colors.white,
           elevation: AppDimensions.cardElevationSmall,
           shadowColor: AppColors.shadowPrimary,
@@ -58,15 +65,15 @@ class AppTheme {
             vertical: AppDimensions.buttonPaddingVertical,
           ),
           minimumSize: Size(0, AppDimensions.buttonHeightMedium),
-          textStyle: AppTypography.buttonMedium,
+           textStyle: AppTypography.buttonMedium,
         ),
       ),
 
       // Outlined Button Theme
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary500,
-          side: const BorderSide(color: AppColors.primary500),
+          foregroundColor: kPrimary,
+          side: const BorderSide(color: kPrimary),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
           ),
@@ -75,16 +82,14 @@ class AppTheme {
             vertical: AppDimensions.buttonPaddingVertical,
           ),
           minimumSize: Size(0, AppDimensions.buttonHeightMedium),
-          textStyle: AppTypography.buttonMedium.copyWith(
-            color: AppColors.primary500,
-          ),
+           textStyle: AppTypography.buttonMedium.copyWith(color: kPrimary),
         ),
       ),
 
       // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary500,
+          foregroundColor: kPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
           ),
@@ -93,9 +98,7 @@ class AppTheme {
             vertical: AppDimensions.buttonPaddingVertical,
           ),
           minimumSize: Size(0, AppDimensions.buttonHeightMedium),
-          textStyle: AppTypography.buttonMedium.copyWith(
-            color: AppColors.primary500,
-          ),
+           textStyle: AppTypography.buttonMedium.copyWith(color: kPrimary),
         ),
       ),
 
@@ -113,10 +116,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
-          borderSide: const BorderSide(
-            color: AppColors.primary500,
-            width: AppDimensions.borderWidthMedium,
-          ),
+           borderSide: const BorderSide(color: kPrimary, width: AppDimensions.borderWidthMedium),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
@@ -147,7 +147,7 @@ class AppTheme {
       // Card Theme
       cardTheme: CardThemeData(
         elevation: AppDimensions.cardElevationMedium,
-        shadowColor: AppColors.shadowMedium,
+         shadowColor: AppColors.shadowMedium,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusLarge),
         ),
@@ -156,9 +156,9 @@ class AppTheme {
       ),
 
       // Bottom Navigation Bar Theme
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primary500,
+       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: kSurface,
+        selectedItemColor: kPrimary,
         unselectedItemColor: AppColors.text400,
         type: BottomNavigationBarType.fixed,
         elevation: AppDimensions.cardElevationLarge,
@@ -173,8 +173,8 @@ class AppTheme {
       ),
 
       // Floating Action Button Theme
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary500,
+       floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: kPrimary,
         foregroundColor: Colors.white,
         elevation: AppDimensions.cardElevationLarge,
         shape: CircleBorder(),
@@ -253,10 +253,10 @@ class AppTheme {
       ),
 
       // Tab Bar Theme
-      tabBarTheme: const TabBarThemeData(
-        labelColor: AppColors.primary500,
+       tabBarTheme: const TabBarThemeData(
+        labelColor: kPrimary,
         unselectedLabelColor: AppColors.text500,
-        indicatorColor: AppColors.primary500,
+        indicatorColor: kPrimary,
         labelStyle: TextStyle(
           fontSize: 14,
           fontWeight: AppTypography.medium,
@@ -269,15 +269,15 @@ class AppTheme {
 
       // Switch Theme
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
+         thumbColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {
-            return AppColors.primary500;
+             return kPrimary;
           }
           return Colors.grey[400];
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
+         trackColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {
-            return AppColors.primary100;
+             return AppColors.primary100;
           }
           return Colors.grey[300];
         }),
@@ -285,9 +285,9 @@ class AppTheme {
 
       // Checkbox Theme
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
+         fillColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {
-            return AppColors.primary500;
+             return kPrimary;
           }
           return Colors.transparent;
         }),
@@ -298,30 +298,30 @@ class AppTheme {
       ),
 
       // Radio Theme
-      radioTheme: RadioThemeData(
+       radioTheme: RadioThemeData(
         fillColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {
-            return AppColors.primary500;
+            return kPrimary;
           }
           return Colors.grey[400];
         }),
       ),
 
       // Slider Theme
-      sliderTheme: SliderThemeData(
-        activeTrackColor: AppColors.primary500,
+       sliderTheme: SliderThemeData(
+        activeTrackColor: kPrimary,
         inactiveTrackColor: Colors.grey[300],
-        thumbColor: AppColors.primary500,
+        thumbColor: kPrimary,
         overlayColor: AppColors.primary100,
-        valueIndicatorColor: AppColors.primary500,
+        valueIndicatorColor: kPrimary,
         valueIndicatorTextStyle: AppTypography.labelMedium.copyWith(
           color: Colors.white,
         ),
       ),
 
       // Progress Indicator Theme
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.primary500,
+       progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: kPrimary,
         linearTrackColor: AppColors.background300,
         circularTrackColor: AppColors.background300,
       ),
@@ -329,29 +329,32 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
+    // Strictly follow provided dark color scheme
+    const Color kPrimary = Color(0xFF90CAF9);
+    const Color kSecondary = Color(0xFF80CBC4);
+    const Color kBackground = Color(0xFF121212);
+    const Color kSurface = Color(0xFF1E1E1E);
+    const Color kOnSurface = Color(0xFFEAEAEA);
+    const Color kOnPrimary = Color(0xFF0D47A1);
+    const Color kError = Color(0xFFEF9A9A);
+
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary500,
-        brightness: Brightness.dark,
-        primary: AppColors.primary400,
-        secondary: AppColors.accent400,
-        surface: const Color(0xFF1E1E1E),
-        background: const Color(0xFF121212),
-        error: AppColors.error,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: Colors.white,
-        onBackground: Colors.white,
-        onError: Colors.white,
+      brightness: Brightness.dark,
+      primaryColor: kPrimary,
+      scaffoldBackgroundColor: kBackground,
+      cardColor: kSurface,
+      fontFamily: 'Inter',
+      colorScheme: const ColorScheme.dark(
+        primary: kPrimary,
+        onPrimary: kOnPrimary,
+        secondary: kSecondary,
+        background: kBackground,
+        surface: kSurface,
+        onSurface: kOnSurface,
+        error: kError,
       ),
-      textTheme: AppTypography.textTheme.apply(
-        bodyColor: Colors.white,
-        displayColor: Colors.white,
-      ),
-
-      // Similar theme customization for dark mode
-      // (Implementation would be similar to light theme but with dark colors)
+      textTheme: AppTypography.textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
     );
   }
 }
