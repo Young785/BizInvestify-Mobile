@@ -8,6 +8,8 @@ import '../../wallet/screens/wallet_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../../core/settings/settings_controller.dart';
 import 'package:image_picker/image_picker.dart';
+import 'kyc_screen.dart';
+import 'security_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -248,13 +250,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           icon: Icons.verified_user,
           title: 'KYC Verification',
           subtitle: 'Manage your identity verification',
-          onTap: () {},
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const KycScreen()));
+          },
         ),
         _buildMenuItem(
           icon: Icons.security,
           title: 'Security',
           subtitle: '2FA, passwords and devices',
-          onTap: () {},
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SecurityScreen()));
+          },
         ),
         _buildMenuItem(
           icon: Icons.shopping_bag,
