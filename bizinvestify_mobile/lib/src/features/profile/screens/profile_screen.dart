@@ -10,6 +10,8 @@ import '../../../core/settings/settings_controller.dart';
 import 'package:image_picker/image_picker.dart';
 import 'kyc_screen.dart';
 import 'security_screen.dart';
+import 'devices_screen.dart';
+import 'privacy_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -75,7 +77,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           child: Align(
                             alignment: Alignment.bottomLeft,
                             child: Padding(
-                              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16.0),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
@@ -107,7 +109,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   Column(
                                     mainAxisSize: MainAxisSize.min,
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
+                children: [
                                       Text(user.email, style: const TextStyle(color: Colors.white70)),
                                       const SizedBox(height: 4),
                                       Container(
@@ -117,9 +119,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       )
                                     ],
                                   )
-                                ],
-                              ),
-                            ),
+                ],
+              ),
+            ),
                           ),
                         ),
                       ),
@@ -134,8 +136,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
+      child: Column(
+        children: [
                           _buildProfileStats(user),
                           const SizedBox(height: 16),
                           _buildEditableForm(context, authState),
@@ -149,7 +151,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   )
                 ],
               ),
-            ),
+      ),
     );
   }
 
@@ -283,6 +285,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           },
         ),
         _buildMenuItem(
+          icon: Icons.devices_other,
+          title: 'Devices & Sessions',
+          subtitle: 'Manage signed-in devices',
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DevicesScreen()));
+          },
+        ),
+        _buildMenuItem(
+          icon: Icons.privacy_tip_outlined,
+          title: 'Privacy & Data',
+          subtitle: 'Export or manage data',
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyScreen()));
+          },
+        ),
+        _buildMenuItem(
           icon: Icons.help_outline,
           title: 'Help & Support',
           subtitle: 'Get assistance and FAQs',
@@ -406,15 +424,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: authState.isLoading ? null : () => _showLogoutDialog(context, ref),
+      onPressed: authState.isLoading ? null : () => _showLogoutDialog(context, ref),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
           side: const BorderSide(color: Colors.red),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           foregroundColor: Colors.red,
         ),
-        child: authState.isLoading
-            ? const SizedBox(
+      child: authState.isLoading
+          ? const SizedBox(
                 height: 18,
                 width: 18,
                 child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.red)),
