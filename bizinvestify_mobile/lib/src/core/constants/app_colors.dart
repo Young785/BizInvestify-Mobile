@@ -9,7 +9,7 @@ class AppColors {
   static const Color primary200 = Color(0xFFA3CCFF);
   static const Color primary300 = Color(0xFF7FB8FF);
   static const Color primary400 = Color(0xFF5BA4FF);
-  static const Color primary500 = Color(0xFF1A73E8); // Trust Blue - Main
+  static const Color primary500 = Color(0xFF1E88E5); // Updated brand blue per tagged theme
   static const Color primary600 = Color(0xFF1565C0);
   static const Color primary700 = Color(0xFF0D47A1);
   static const Color primary800 = Color(0xFF0A3D8F);
@@ -21,7 +21,7 @@ class AppColors {
   static const Color accent200 = Color(0xFF99DFC3);
   static const Color accent300 = Color(0xFF66CFA5);
   static const Color accent400 = Color(0xFF33BF87);
-  static const Color accent500 = Color(0xFF00C48C); // Mint Green - Main
+  static const Color accent500 = Color(0xFF00BFA5); // Updated mint green per tagged theme
   static const Color accent600 = Color(0xFF009D6F);
   static const Color accent700 = Color(0xFF007652);
   static const Color accent800 = Color(0xFF004F35);
@@ -42,7 +42,7 @@ class AppColors {
   // Background Colors
   static const Color background50 = Color(0xFFFFFFFF);
   static const Color background100 = Color(0xFFF8F9FA);
-  static const Color background200 = Color(0xFFF5F7FA); // Soft Light Grey
+  static const Color background200 = Color(0xFFF9FAFB); // Softer light grey per tagged theme
   static const Color background300 = Color(0xFFE9ECEF);
   static const Color background400 = Color(0xFFDEE2E6);
   static const Color background500 = Color(0xFFCED4DA);

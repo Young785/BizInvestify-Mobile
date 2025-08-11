@@ -278,6 +278,8 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
 
   void _loadAnalytics() {
     ref.read(dashboardProvider.notifier).loadAnalytics();
+    // Also ensure marketplace meta is loaded for the hero carousel
+    ref.read(marketplaceProvider.notifier).loadMarketplaceMeta();
   }
 
   @override

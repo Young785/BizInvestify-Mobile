@@ -199,87 +199,88 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildPage(OnboardingPage page) {
-    return Padding(
-      padding: const EdgeInsets.all(AppDimensions.spacing24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Illustration Image
-          Container(
-            height: 260,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                CachedNetworkImage(
-                  imageUrl: page.imageUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(color: page.color.withOpacity(0.08)),
-                  errorWidget: (_, __, ___) => Container(
-                    color: page.color.withOpacity(0.08),
-                    alignment: Alignment.center,
-                    child: Icon(Icons.image_not_supported_outlined, color: page.color),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primary50, AppColors.background200],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.spacing24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Illustration Image with rounded mask
+            Container(
+              height: 280,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowMedium,
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
-                ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withOpacity(0.25)],
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CachedNetworkImage(
+                    imageUrl: page.imageUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(color: page.color.withOpacity(0.08)),
+                    errorWidget: (_, __, ___) => Container(
+                      color: page.color.withOpacity(0.08),
+                      alignment: Alignment.center,
+                      child: Icon(Icons.image_not_supported_outlined, color: page.color),
                     ),
                   ),
-                ),
-              ],
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.transparent, page.color.withOpacity(0.25)],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          
-          const SizedBox(height: AppDimensions.spacing32),
-          
-          // Title
-          Text(
-            page.title,
-            style: AppTypography.headlineMedium.copyWith(
-              fontWeight: AppTypography.bold,
-              color: AppColors.text800,
+
+            const SizedBox(height: AppDimensions.spacing24),
+
+            // Title and subtitle over colored chip
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: page.color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                page.subtitle,
+                style: AppTypography.captionMedium.copyWith(color: page.color, fontWeight: AppTypography.semibold),
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-          
-          const SizedBox(height: AppDimensions.spacing16),
-          
-          // Subtitle
-          Text(
-            page.subtitle,
-            style: AppTypography.titleMedium.copyWith(
-              color: page.color,
-              fontWeight: AppTypography.semibold,
+            const SizedBox(height: 10),
+            Text(
+              page.title,
+              style: AppTypography.headlineMedium.copyWith(fontWeight: AppTypography.bold, color: AppColors.text800),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          
-          const SizedBox(height: AppDimensions.spacing24),
-          
-          // Description
-          Text(
-            page.description,
-            style: AppTypography.bodyLarge.copyWith(
-              color: AppColors.text600,
-              height: 1.6,
+
+            const SizedBox(height: AppDimensions.spacing16),
+            Text(
+              page.description,
+              style: AppTypography.bodyLarge.copyWith(color: AppColors.text600, height: 1.6),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

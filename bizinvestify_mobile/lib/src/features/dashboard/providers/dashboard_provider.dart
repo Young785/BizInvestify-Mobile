@@ -82,12 +82,18 @@ class DashboardNotifier extends StateNotifier<DashboardState> {
 
   DashboardNotifier(this._apiService) : super(const DashboardState());
 
-  // Load Dashboard Analytics
+  // Load Dashboard Analytics (live data where available)
   Future<void> loadAnalytics() async {
     state = state.copyWith(isLoading: true, error: null);
     
     try {
-      final analyticsData = await _apiService.getStats();
+      // Try richer analytics first; fallback to /stats
+      Map<String, dynamic>? analyticsData;
+      try {
+        analyticsData = await _apiService.getOverviewAnalytics();
+      } catch (_) {
+        analyticsData = await _apiService.getStats();
+      }
       final analytics = DashboardAnalytics.fromJson(analyticsData);
       
       state = state.copyWith(
@@ -95,11 +101,7 @@ class DashboardNotifier extends StateNotifier<DashboardState> {
         isLoading: false,
       );
     } catch (e) {
-      // For demo purposes, use default analytics if API fails
-      state = state.copyWith(
-        analytics: DashboardAnalytics.defaultAnalytics(),
-        isLoading: false,
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 

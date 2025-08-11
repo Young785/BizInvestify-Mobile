@@ -5,12 +5,12 @@ import '../providers/marketplace_provider.dart';
 
 class BusinessCard extends StatelessWidget {
   final Business business;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const BusinessCard({
     super.key,
     required this.business,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
