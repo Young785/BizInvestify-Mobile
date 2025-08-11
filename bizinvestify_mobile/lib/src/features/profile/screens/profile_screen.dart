@@ -2,175 +2,156 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
-// Removed PrimaryButton usage for logout to use outlined style
 import '../../auth/providers/auth_provider.dart';
 import '../../orders/screens/orders_screen.dart';
 import '../../wallet/screens/wallet_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../../core/settings/settings_controller.dart';
+import 'package:image_picker/image_picker.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _firstName;
+  late TextEditingController _lastName;
+  late TextEditingController _phone;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(userProvider);
+    _firstName = TextEditingController(text: user?.firstName ?? '');
+    _lastName = TextEditingController(text: user?.lastName ?? '');
+    _phone = TextEditingController(text: user?.phone ?? '');
+    // Ensure fresh data
+    ref.read(authProvider.notifier).refreshUser();
+  }
+
+  @override
+  void dispose() {
+    _firstName.dispose();
+    _lastName.dispose();
+    _phone.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(userProvider);
     final authState = ref.watch(authProvider);
     
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // TODO: Navigate to settings
-            },
-          ),
-        ],
-      ),
       body: user == null
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // Profile Header
-                  _buildProfileHeader(user),
-                  
-                  const SizedBox(height: 24.0),
-                  
-                  // Profile Stats
-                  _buildProfileStats(user),
-                  
-                  const SizedBox(height: 24.0),
-                  
-                  // Menu Items
-                  _buildMenuItems(context, ref),
-                  
-                  const SizedBox(height: 32.0),
-                  
-                  // Logout Button (outlined red as in reference)
-                  _buildOutlinedLogout(context, ref, authState),
+          : RefreshIndicator(
+              onRefresh: () async => ref.read(authProvider.notifier).refreshUser(),
+              child: CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    pinned: true,
+                    expandedHeight: 200,
+                    backgroundColor: AppColors.primary600,
+                    flexibleSpace: FlexibleSpaceBar(
+                      titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+                      title: Text(user.displayName, style: const TextStyle(color: Colors.white)),
+                      background: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [AppColors.primary600, AppColors.accent600],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: SafeArea(
+                          child: Align(
+                            alignment: Alignment.bottomLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => _pickAndUploadAvatar(),
+                                    child: Stack(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 38,
+                                          backgroundColor: Colors.white.withOpacity(0.2),
+                                          backgroundImage: user.profilePicture != null ? NetworkImage(user.profilePicture!) : null,
+                                          child: user.profilePicture == null
+                                              ? const Icon(Icons.person, color: Colors.white, size: 34)
+                                              : null,
+                                        ),
+                                        Positioned(
+                                          right: -2,
+                                          bottom: -2,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                            child: const Icon(Icons.camera_alt, color: AppColors.primary600, size: 16),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(user.email, style: const TextStyle(color: Colors.white70)),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                                        child: Text(user.role.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                      )
+                                    ],
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    actions: [
+                      IconButton(icon: const Icon(Icons.notifications_none, color: Colors.white), onPressed: () {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                      })
+                    ],
+                  ),
+
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          _buildProfileStats(user),
+                          const SizedBox(height: 16),
+                          _buildEditableForm(context, authState),
+                          const SizedBox(height: 24),
+                          _buildMenuItems(context, ref),
+                          const SizedBox(height: 24),
+                          _buildOutlinedLogout(context, ref, authState),
+                        ],
+                      ),
+                    ),
+                  )
                 ],
               ),
             ),
     );
   }
 
-  Widget _buildProfileHeader(User user) {
-    return Container(
-      padding: const EdgeInsets.all(24.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Avatar
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: AppColors.primary500.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: user.profilePicture != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(50),
-                    child: Image.network(
-                      user.profilePicture!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.person,
-                        size: 50,
-                        color: AppColors.primary500,
-                      ),
-                    ),
-                  )
-                : const Icon(
-                    Icons.person,
-                    size: 50,
-                    color: AppColors.primary500,
-                  ),
-          ),
-          
-          const SizedBox(height: 16.0),
-          
-          // Name
-          Text(
-            user.fullName,
-            style: AppTypography.headlineSmall.copyWith(
-              fontWeight: AppTypography.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          
-          const SizedBox(height: 8.0),
-          
-          // Email
-          Text(
-            user.email,
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textTertiary,
-            ),
-          ),
-          
-          const SizedBox(height: 16.0),
-          
-          // Role Badge
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
-            ),
-            decoration: BoxDecoration(
-              color: _getRoleColor(user.role).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              user.role.toUpperCase(),
-              style: AppTypography.captionMedium.copyWith(
-                color: _getRoleColor(user.role),
-                fontWeight: AppTypography.medium,
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 16.0),
-          
-          // Verification Status
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                user.emailVerified ? Icons.verified : Icons.warning,
-                size: 16,
-                color: user.emailVerified ? AppColors.secondary500 : AppColors.warning500
-              ),
-              const SizedBox(width: 4),
-              Text(
-                user.emailVerified ? 'Email Verified' : 'Email Not Verified',
-                style: AppTypography.captionMedium.copyWith(
-                  color: user.emailVerified ? AppColors.secondary500 : AppColors.warning500
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // Header replaced by SliverAppBar
 
   Widget _buildProfileStats(User user) {
     return Row(
@@ -437,6 +418,69 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildEditableForm(BuildContext context, AuthState authState) {
+    ref.watch(userProvider)!;
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Personal Information', style: AppTypography.titleSmall.copyWith(fontWeight: AppTypography.bold)),
+          ),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _field('First name', _firstName)),
+            const SizedBox(width: 12),
+            Expanded(child: _field('Last name', _lastName)),
+          ]),
+          const SizedBox(height: 12),
+          _field('Phone', _phone, keyboardType: TextInputType.phone),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: authState.isLoading
+                  ? null
+                  : () async {
+                      if (!_formKey.currentState!.validate()) return;
+                      final ok = await ref.read(authProvider.notifier).updateProfile({
+                        'first_name': _firstName.text.trim(),
+                        'last_name': _lastName.text.trim(),
+                        'phone': _phone.text.trim(),
+                      });
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'Profile updated' : 'Update failed')));
+                    },
+              child: authState.isLoading
+                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Save Changes'),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _field(String label, TextEditingController controller, {TextInputType? keyboardType}) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(labelText: label),
+      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+    );
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+    if (image == null) return;
+    await ref.read(authProvider.notifier).uploadProfilePhoto(image.path);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile photo updated')));
+  }
+
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
@@ -469,18 +513,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return Colors.red;
-      case 'seller':
-        return AppColors.secondary500;
-      case 'buyer':
-        return AppColors.primary500;
-      default:
-        return AppColors.textTertiary;
-    }
-  }
+  // Deprecated helper removed: role color now handled in header badge styling
 
   Color _getKycStatusColor(String status) {
     switch (status.toLowerCase()) {

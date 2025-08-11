@@ -264,6 +264,51 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  // Refresh current user from API
+  Future<void> refreshUser() async {
+    try {
+      final userData = await _apiService.getCurrentUser();
+      final fresh = User.fromJson(userData);
+      state = state.copyWith(user: fresh);
+    } catch (e) {
+      // ignore but keep last user
+    }
+  }
+
+  // Upload profile photo and refresh user
+  Future<bool> uploadProfilePhoto(String imagePath) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await _apiService.uploadProfileImage(imagePath);
+      // Try to read updated user from different shapes
+      Map<String, dynamic>? userJson;
+      final Map<String, dynamic> mapResp = Map<String, dynamic>.from(response);
+      if (mapResp.isNotEmpty) {
+        if (mapResp['user'] is Map<String, dynamic>) {
+          userJson = mapResp['user'] as Map<String, dynamic>;
+        } else if (mapResp['data'] is Map<String, dynamic> && mapResp['data']['user'] is Map<String, dynamic>) {
+          userJson = mapResp['data']['user'] as Map<String, dynamic>;
+        } else if (state.user != null && (mapResp['profile_picture'] != null || (mapResp['data']?['profile_picture'] != null))) {
+          final url = (mapResp['profile_picture'] ?? mapResp['data']?['profile_picture']).toString();
+          userJson = state.user!.copyWith(profilePicture: url).toJson();
+        }
+      }
+
+      if (userJson == null) {
+        // Fallback fetch
+        final me = await _apiService.getCurrentUser();
+        userJson = me;
+      }
+
+      final updated = User.fromJson(userJson);
+      state = state.copyWith(user: updated, isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+
   // Upload KYC documents
   Future<bool> uploadKycDocuments(Map<String, dynamic> documents) async {
     state = state.copyWith(isLoading: true, error: null);
