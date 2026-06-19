@@ -7,6 +7,8 @@ use App\Models\Transaction;
 use App\Models\Product;
 use App\Models\Business;
 use App\Models\Investment;
+use App\Models\Order;
+use App\Models\OrderStatusHistory;
 use App\Models\FeaturedListing;
 use App\Models\Withdrawal;
 use App\Models\Notification;
@@ -16,6 +18,7 @@ use Illuminate\Support\Facades\Mail;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Stripe\Customer;
+use Stripe\PaymentMethod;
 use Stripe\Account;
 use Stripe\Exception\ApiErrorException;
 
@@ -120,12 +123,8 @@ class PaymentService
         try {
             $amountInCents = $amount * 100; // Convert to cents
 
-            // Validate investment amount
-            if ($amount > $business->funding_goal) {
-                return [
-                    'success' => false,
-                    'error' => 'Investment amount exceeds funding goal'
-                ];
+            if ($error = $this->validateInvestmentAmount($business, $amount)) {
+                return $error;
             }
 
             // Create or get Stripe customer
@@ -283,12 +282,8 @@ class PaymentService
         try {
             $amountInKobo = $amount * 100; // Convert to kobo
 
-            // Validate investment amount
-            if ($amount > $business->funding_goal) {
-                return [
-                    'success' => false,
-                    'error' => 'Investment amount exceeds funding goal'
-                ];
+            if ($error = $this->validateInvestmentAmount($business, $amount)) {
+                return $error;
             }
 
             $url = "https://api.paystack.co/transaction/initialize";
@@ -372,11 +367,84 @@ class PaymentService
     }
 
     /**
+     * Whether the authenticated user initiated or owns this transaction.
+     */
+    public function userOwnsTransaction(Transaction $transaction, User $user): bool
+    {
+        $userId = (int) $user->id;
+
+        return in_array($userId, array_filter([
+            (int) $transaction->user_id,
+            (int) $transaction->buyer_id,
+        ], fn (int $id) => $id > 0), true);
+    }
+
+    /**
+     * Create pending records for offline investment payments (bank transfer, crypto).
+     */
+    public function createOfflineInvestmentTransaction(
+        User $user,
+        Business $business,
+        float $amount,
+        string $referenceId,
+        string $paymentMethod,
+        array $extraMetadata = []
+    ): array {
+        $transaction = $this->createPaymentTransaction([
+            'user_id' => $user->id,
+            'type' => 'investment',
+            'currency' => 'USD',
+            'status' => 'pending',
+            'payment_method' => $paymentMethod,
+            'reference_id' => $referenceId,
+            'listing_id' => $business->id,
+            'listing_type' => 'business',
+            'metadata' => array_merge([
+                'business_id' => $business->id,
+                'type' => 'business_investment',
+            ], $extraMetadata),
+        ], $amount, $paymentMethod, 'investment', $user->id, $business->seller_id);
+
+        $investment = Investment::create([
+            'investor_id' => $user->id,
+            'business_id' => $business->id,
+            'amount' => $amount,
+            'equity_percentage' => $this->calculateEquityPercentage($amount, $business),
+            'status' => 'pending',
+        ]);
+
+        return [
+            'success' => true,
+            'transaction_id' => $transaction->id,
+            'investment_id' => $investment->id,
+        ];
+    }
+
+    /**
      * Verify Paystack payment
      */
-    public function verifyPaystackPayment(string $reference): array
+    public function verifyPaystackPayment(string $reference, ?User $user = null): array
     {
         try {
+            $transaction = Transaction::where('reference_id', $reference)->first();
+
+            if ($user) {
+                if (!$transaction) {
+                    return [
+                        'success' => false,
+                        'error' => 'Transaction not found',
+                    ];
+                }
+
+                if (!$this->userOwnsTransaction($transaction, $user)) {
+                    return [
+                        'success' => false,
+                        'error' => 'Unauthorized',
+                        'status' => 403,
+                    ];
+                }
+            }
+
             $url = "https://api.paystack.co/transaction/verify/" . $reference;
             $paystackConfig = $this->gateways->getGateway('paystack');
             $secret = $this->gateways->getSecretKey('paystack');
@@ -405,13 +473,28 @@ class PaymentService
             }
 
             if (($result['status'] ?? false) && ($result['data']['status'] ?? '') === 'success') {
-                // Find and update transaction
-                $transaction = Transaction::where('reference_id', $reference)->first();
-                
+                $transaction = $transaction ?? Transaction::where('reference_id', $reference)->first();
+
                 if (!$transaction) {
                     return [
                         'success' => false,
                         'error' => 'Transaction not found'
+                    ];
+                }
+
+                if ($user && !$this->userOwnsTransaction($transaction, $user)) {
+                    return [
+                        'success' => false,
+                        'error' => 'Unauthorized',
+                        'status' => 403,
+                    ];
+                }
+
+                if ($transaction->status === 'completed') {
+                    return [
+                        'success' => true,
+                        'transaction_id' => $transaction->id,
+                        'amount' => $transaction->amount,
                     ];
                 }
 
@@ -559,26 +642,41 @@ class PaymentService
     /**
      * Confirm payment and update transaction status
      */
-    public function confirmPayment(string $paymentIntentId): array
+    public function confirmPayment(string $paymentIntentId, ?User $user = null): array
     {
         if (!$this->ensureStripeConfigured()) {
             return ['success' => false, 'error' => 'Stripe is not configured'];
         }
 
         try {
-            $paymentIntent = PaymentIntent::retrieve($paymentIntentId);
-            
-            if ($paymentIntent->status === 'succeeded') {
-                // Find and update transaction
-                $transaction = Transaction::where('reference_id', $paymentIntentId)->first();
-                
-                if (!$transaction) {
-                    return [
-                        'success' => false,
-                        'error' => 'Transaction not found'
-                    ];
-                }
+            $transaction = Transaction::where('reference_id', $paymentIntentId)->first();
 
+            if (!$transaction) {
+                return [
+                    'success' => false,
+                    'error' => 'Transaction not found'
+                ];
+            }
+
+            if ($user && !$this->userOwnsTransaction($transaction, $user)) {
+                return [
+                    'success' => false,
+                    'error' => 'Unauthorized',
+                    'status' => 403,
+                ];
+            }
+
+            if ($transaction->status === 'completed') {
+                return [
+                    'success' => true,
+                    'transaction_id' => $transaction->id,
+                    'amount' => $transaction->amount,
+                ];
+            }
+
+            $paymentIntent = PaymentIntent::retrieve($paymentIntentId);
+
+            if ($paymentIntent->status === 'succeeded') {
                 $transaction->update([
                     'status' => $transaction->type === 'escrow' ? 'processing' : 'completed',
                     'metadata' => array_merge($transaction->metadata ?? [], [
@@ -729,6 +827,73 @@ class PaymentService
     }
 
     /**
+     * List saved Stripe payment methods for a user.
+     */
+    public function listSavedPaymentMethods(User $user): array
+    {
+        if (!$this->gateways->isEnabled('stripe') || !$this->ensureStripeConfigured()) {
+            return ['success' => true, 'data' => []];
+        }
+
+        try {
+            if (!$user->stripe_customer_id) {
+                return ['success' => true, 'data' => []];
+            }
+
+            $methods = PaymentMethod::all([
+                'customer' => $user->stripe_customer_id,
+                'type' => 'card',
+            ]);
+
+            $data = collect($methods->data)->map(fn ($method) => [
+                'id' => $method->id,
+                'type' => $method->type,
+                'brand' => $method->card->brand ?? null,
+                'last4' => $method->card->last4 ?? null,
+                'exp_month' => $method->card->exp_month ?? null,
+                'exp_year' => $method->card->exp_year ?? null,
+                'is_default' => false,
+            ])->values()->all();
+
+            return ['success' => true, 'data' => $data];
+        } catch (ApiErrorException $e) {
+            Log::error('List payment methods failed: '.$e->getMessage());
+
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Attach a Stripe payment method to the user's customer profile.
+     */
+    public function savePaymentMethod(User $user, string $paymentMethodId): array
+    {
+        if (!$this->gateways->isEnabled('stripe') || !$this->ensureStripeConfigured()) {
+            return ['success' => false, 'error' => 'Stripe is not enabled or configured'];
+        }
+
+        try {
+            $customer = $this->getOrCreateCustomer($user);
+            $method = PaymentMethod::retrieve($paymentMethodId);
+            $method->attach(['customer' => $customer->id]);
+
+            return [
+                'success' => true,
+                'data' => [
+                    'id' => $method->id,
+                    'type' => $method->type,
+                    'brand' => $method->card->brand ?? null,
+                    'last4' => $method->card->last4 ?? null,
+                ],
+            ];
+        } catch (ApiErrorException $e) {
+            Log::error('Save payment method failed: '.$e->getMessage());
+
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Get or create Stripe customer
      */
     private function getOrCreateCustomer(User $user): Customer
@@ -814,7 +979,52 @@ class PaymentService
             $this->creditSellerPayout($transaction, $sellerId, (float) $transaction->net_amount, 'product_sale');
         }
 
+        $this->ensureOrderFromProductPurchase($transaction, $product, $quantity);
         $this->sendProductPurchaseNotifications($transaction, $product, $quantity);
+    }
+
+    private function ensureOrderFromProductPurchase(Transaction $transaction, ?Product $product, int $quantity): void
+    {
+        if (!$product) {
+            return;
+        }
+
+        $referenceId = $transaction->reference_id ?: $transaction->payment_intent_id;
+        if ($referenceId && Order::where('payment_intent_id', $referenceId)->exists()) {
+            return;
+        }
+
+        $buyerId = (int) ($transaction->buyer_id ?: $transaction->user_id);
+        $buyer = User::find($buyerId);
+        if (!$buyer) {
+            return;
+        }
+
+        $order = Order::create([
+            'user_id' => $buyerId,
+            'seller_id' => $product->seller_id,
+            'customer_name' => $buyer->name,
+            'customer_email' => $buyer->email,
+            'product_id' => $product->id,
+            'product_name' => $product->title,
+            'amount' => $transaction->amount,
+            'currency' => strtoupper((string) ($transaction->currency ?: 'USD')),
+            'payment_method' => $transaction->payment_method,
+            'payment_intent_id' => $referenceId,
+            'status' => 'confirmed',
+            'metadata' => [
+                'transaction_id' => $transaction->id,
+                'quantity' => $quantity,
+            ],
+        ]);
+
+        OrderStatusHistory::create([
+            'order_id' => $order->id,
+            'from_status' => null,
+            'to_status' => 'confirmed',
+            'notes' => 'Order created from payment',
+            'user_id' => $buyerId,
+        ]);
     }
 
     private function sendProductPurchaseNotifications(Transaction $transaction, ?Product $product, int $quantity): void
@@ -1216,8 +1426,8 @@ class PaymentService
     public function createFlutterwaveInvestmentPayment(User $user, Business $business, float $amount): array
     {
         try {
-            if ($amount > $business->funding_goal) {
-                return ['success' => false, 'error' => 'Investment amount exceeds funding goal'];
+            if ($error = $this->validateInvestmentAmount($business, $amount)) {
+                return $error;
             }
 
             $fwConfig = $this->gateways->getGateway('flutterwave');
@@ -1286,9 +1496,25 @@ class PaymentService
     /**
      * Verify Flutterwave payment by transaction reference
      */
-    public function verifyFlutterwavePayment(string $reference): array
+    public function verifyFlutterwavePayment(string $reference, ?User $user = null): array
     {
         try {
+            $transaction = Transaction::where('reference_id', $reference)->first();
+
+            if ($user) {
+                if (!$transaction) {
+                    return ['success' => false, 'error' => 'Transaction not found'];
+                }
+
+                if (!$this->userOwnsTransaction($transaction, $user)) {
+                    return [
+                        'success' => false,
+                        'error' => 'Unauthorized',
+                        'status' => 403,
+                    ];
+                }
+            }
+
             $fwConfig = $this->gateways->getGateway('flutterwave');
             $secret = $this->gateways->getSecretKey('flutterwave');
             if (!$this->gateways->isEnabled('flutterwave') || !$secret) {
@@ -1300,10 +1526,26 @@ class PaymentService
             $result = json_decode($response, true);
 
             if (($result['status'] ?? '') === 'success' && ($result['data']['status'] ?? '') === 'successful') {
-                $transaction = Transaction::where('reference_id', $reference)->first();
+                $transaction = $transaction ?? Transaction::where('reference_id', $reference)->first();
 
                 if (!$transaction) {
                     return ['success' => false, 'error' => 'Transaction not found'];
+                }
+
+                if ($user && !$this->userOwnsTransaction($transaction, $user)) {
+                    return [
+                        'success' => false,
+                        'error' => 'Unauthorized',
+                        'status' => 403,
+                    ];
+                }
+
+                if ($transaction->status === 'completed') {
+                    return [
+                        'success' => true,
+                        'transaction_id' => $transaction->id,
+                        'amount' => $transaction->amount,
+                    ];
                 }
 
                 $transaction->update([
@@ -1345,6 +1587,27 @@ class PaymentService
         $rate = max($gatewayRate, $platformRate);
 
         return round($amount * $rate, 2);
+    }
+
+    private function validateInvestmentAmount(Business $business, float $amount): ?array
+    {
+        $remaining = $business->remainingFunding();
+
+        if ($remaining <= 0) {
+            return [
+                'success' => false,
+                'error' => 'This business has reached its funding goal',
+            ];
+        }
+
+        if ($amount > $remaining) {
+            return [
+                'success' => false,
+                'error' => 'Investment amount exceeds remaining funding goal of '.number_format($remaining, 2),
+            ];
+        }
+
+        return null;
     }
 
     /**

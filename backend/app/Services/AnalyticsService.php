@@ -8,6 +8,7 @@ use App\Models\Business;
 use App\Models\Investment;
 use App\Models\Transaction;
 use App\Models\AnalyticsEvent;
+use App\Models\ActivityLog;
 use App\Models\UserAnalytics;
 use App\Models\Review;
 use App\Models\Wishlist;
@@ -488,14 +489,35 @@ class AnalyticsService
 
     private function calculateRetentionRate(Carbon $startDate): float
     {
-        // Implementation for retention rate calculation
-        return 0.0; // Placeholder
+        $periodDays = max(1, $startDate->diffInDays(now()));
+        $previousStart = $startDate->copy()->subDays($periodDays);
+
+        $activePrevious = ActivityLog::query()
+            ->where('activity_type', 'login')
+            ->whereBetween('created_at', [$previousStart, $startDate])
+            ->whereNotNull('user_id')
+            ->distinct()
+            ->pluck('user_id');
+
+        if ($activePrevious->isEmpty()) {
+            return 0.0;
+        }
+
+        $retained = ActivityLog::query()
+            ->where('activity_type', 'login')
+            ->whereIn('user_id', $activePrevious)
+            ->where('created_at', '>=', $startDate)
+            ->distinct('user_id')
+            ->count('user_id');
+
+        return round(($retained / $activePrevious->count()) * 100, 2);
     }
 
     private function calculateChurnRate(Carbon $startDate): float
     {
-        // Implementation for churn rate calculation
-        return 0.0; // Placeholder
+        $retention = $this->calculateRetentionRate($startDate);
+
+        return round(max(0, 100 - $retention), 2);
     }
 
     private function getFunnelAnalysis(Carbon $startDate): array
@@ -514,8 +536,32 @@ class AnalyticsService
 
     private function getCohortAnalysis(Carbon $startDate): array
     {
-        // Implementation for cohort analysis
-        return []; // Placeholder
+        $cohorts = User::query()
+            ->where('created_at', '>=', $startDate)
+            ->get(['id', 'created_at'])
+            ->groupBy(fn (User $user) => $user->created_at->format('Y-m'));
+
+        return $cohorts->map(function (Collection $users, string $month) use ($startDate) {
+            $userIds = $users->pluck('id');
+
+            $activeUsers = ActivityLog::query()
+                ->where('activity_type', 'login')
+                ->whereIn('user_id', $userIds)
+                ->where('created_at', '>=', $startDate)
+                ->distinct('user_id')
+                ->count('user_id');
+
+            $totalUsers = $userIds->count();
+
+            return [
+                'cohort' => $month,
+                'users' => $totalUsers,
+                'active_users' => $activeUsers,
+                'retention_rate' => $totalUsers > 0
+                    ? round(($activeUsers / $totalUsers) * 100, 2)
+                    : 0.0,
+            ];
+        })->values()->all();
     }
 
     private function getSellerOverview(int $userId, Carbon $startDate): array

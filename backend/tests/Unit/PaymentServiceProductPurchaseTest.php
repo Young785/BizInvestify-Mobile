@@ -70,6 +70,14 @@ class PaymentServiceProductPurchaseTest extends TestCase
             'title' => 'New Sale Received',
         ]);
 
+        $this->assertDatabaseHas('orders', [
+            'user_id' => $buyer->id,
+            'seller_id' => $seller->id,
+            'product_id' => $product->id,
+            'payment_intent_id' => 'pi_test_product',
+            'status' => 'confirmed',
+        ]);
+
         Event::assertDispatched(MessageSending::class, 2);
     }
 }

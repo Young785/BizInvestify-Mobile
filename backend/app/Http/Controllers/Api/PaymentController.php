@@ -90,10 +90,11 @@ class PaymentController extends Controller
                 'payment_intent_id' => 'required|string',
             ]);
 
-            $result = $paymentService->confirmPayment($validated['payment_intent_id']);
+            $result = $paymentService->confirmPayment($validated['payment_intent_id'], $request->user());
 
             if (!$result['success']) {
-                return response()->json(['success' => false, 'message' => $result['error'] ?? 'Payment not succeeded'], 400);
+                $status = ($result['status'] ?? null) === 403 ? 403 : 400;
+                return response()->json(['success' => false, 'message' => $result['error'] ?? 'Payment not succeeded'], $status);
             }
 
             return response()->json(['success' => true, 'data' => $result]);
@@ -108,11 +109,11 @@ class PaymentController extends Controller
     /**
      * Create a payment intent
      */
-    public function createPaymentIntent(Request $request): JsonResponse
+    public function createPaymentIntent(Request $request, PaymentService $paymentService): JsonResponse
     {
         try {
             $request->validate([
-                'amount' => 'required|numeric|min:100', // Minimum $1.00
+                'amount' => 'required|numeric|min:100',
                 'currency' => 'required|string|in:usd,eur,gbp',
                 'business_id' => 'required|exists:businesses,id',
                 'metadata' => 'array',
@@ -120,25 +121,22 @@ class PaymentController extends Controller
 
             $user = $request->user();
             $business = Business::findOrFail($request->business_id);
+            $amount = round($request->amount / 100, 2);
 
-            // Create payment intent
-            $paymentIntent = PaymentIntent::create([
-                'amount' => $request->amount,
-                'currency' => $request->currency,
-                'metadata' => array_merge($request->metadata ?? [], [
-                    'user_id' => $user->id,
-                    'business_id' => $business->id,
-                    'investment_type' => 'equity',
-                ]),
-                'automatic_payment_methods' => [
-                    'enabled' => true,
-                ],
-            ]);
+            $result = $paymentService->createInvestmentPaymentIntent($user, $business, $amount);
 
+            if (!$result['success']) {
                 return response()->json([
-                    'success' => true,
-                'client_secret' => $paymentIntent->client_secret,
-                'payment_intent_id' => $paymentIntent->id,
+                    'success' => false,
+                    'message' => $result['error'] ?? 'Failed to create payment intent',
+                ], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'client_secret' => $result['client_secret'],
+                'payment_intent_id' => $result['payment_intent_id'],
+                'transaction_id' => $result['transaction_id'] ?? null,
             ]);
 
         } catch (ApiErrorException $e) {
@@ -170,7 +168,7 @@ class PaymentController extends Controller
     /**
      * Process bank transfer payment
      */
-    public function processBankTransfer(Request $request): JsonResponse
+    public function processBankTransfer(Request $request, PaymentService $paymentService): JsonResponse
     {
         try {
             $request->validate([
@@ -182,36 +180,25 @@ class PaymentController extends Controller
 
             $user = $request->user();
             $business = Business::findOrFail($request->business_id);
+            $amount = round($request->amount / 100, 2);
 
-            // Create transaction record aligned with schema
-            $transaction = Transaction::create([
-                'buyer_id' => $user->id,
-                'seller_id' => $business->seller_id,
-                'listing_id' => $business->id,
-                'listing_type' => 'business',
-                'amount' => $request->amount,
-                'payment_method' => 'bank_transfer',
-                'status' => 'pending',
-                'payment_details' => [
+            $result = $paymentService->createOfflineInvestmentTransaction(
+                $user,
+                $business,
+                $amount,
+                $request->payment_intent,
+                'bank_transfer',
+                [
                     'payment_intent' => $request->payment_intent,
                     'transfer_type' => $request->transfer_type,
-                ],
-            ]);
+                ]
+            );
 
-            // Create investment record
-            $investment = Investment::create([
-                'investor_id' => $user->id,
-                'business_id' => $business->id,
-                'amount' => $request->amount,
-                'equity_percentage' => $this->calculateEquityPercentage($request->amount, $business),
-                'status' => 'pending',
-            ]);
-
-                return response()->json([
-                    'success' => true,
+            return response()->json([
+                'success' => true,
                 'message' => 'Bank transfer initiated',
-                'transaction_id' => $transaction->id,
-                'investment_id' => $investment->id,
+                'transaction_id' => $result['transaction_id'],
+                'investment_id' => $result['investment_id'],
             ]);
 
         } catch (\Exception $e) {
@@ -279,8 +266,12 @@ class PaymentController extends Controller
             $validated = $request->validate([
                 'reference' => 'required|string',
             ]);
-            $result = $paymentService->verifyPaystackPayment($validated['reference']);
-            return response()->json($result['success'] ? ['success' => true, 'data' => $result] : ['success' => false, 'message' => $result['error'] ?? 'Verification failed'], $result['success'] ? 200 : 400);
+            $result = $paymentService->verifyPaystackPayment($validated['reference'], $request->user());
+            if (!$result['success']) {
+                $status = ($result['status'] ?? null) === 403 ? 403 : 400;
+                return response()->json(['success' => false, 'message' => $result['error'] ?? 'Verification failed'], $status);
+            }
+            return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             Log::error('verifyPaystackPayment failed', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Failed to verify Paystack payment'], 500);
@@ -349,8 +340,12 @@ class PaymentController extends Controller
             $validated = $request->validate([
                 'reference' => 'required|string',
             ]);
-            $result = $paymentService->verifyFlutterwavePayment($validated['reference']);
-            return response()->json($result['success'] ? ['success' => true, 'data' => $result] : ['success' => false, 'message' => $result['error'] ?? 'Verification failed'], $result['success'] ? 200 : 400);
+            $result = $paymentService->verifyFlutterwavePayment($validated['reference'], $request->user());
+            if (!$result['success']) {
+                $status = ($result['status'] ?? null) === 403 ? 403 : 400;
+                return response()->json(['success' => false, 'message' => $result['error'] ?? 'Verification failed'], $status);
+            }
+            return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             Log::error('verifyFlutterwavePayment failed', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Failed to verify Flutterwave payment'], 500);
@@ -405,7 +400,12 @@ class PaymentController extends Controller
         $signature = $request->header('verif-hash');
         $secret = app(PaymentGatewayService::class)->getWebhookSecret('flutterwave');
 
-        if ($secret && $signature !== $secret) {
+        if (!$secret) {
+            Log::warning('Flutterwave webhook rejected: secret not configured');
+            return response()->json(['success' => false, 'message' => 'Webhook not configured'], 503);
+        }
+
+        if ($signature !== $secret) {
             Log::warning('Flutterwave webhook signature mismatch');
             return response()->json(['success' => false, 'message' => 'Invalid signature'], 400);
         }
@@ -765,7 +765,7 @@ class PaymentController extends Controller
     /**
      * Process cryptocurrency payment
      */
-    public function processCryptoPayment(Request $request): JsonResponse
+    public function processCryptoPayment(Request $request, PaymentService $paymentService): JsonResponse
     {
         try {
             $request->validate([
@@ -777,37 +777,26 @@ class PaymentController extends Controller
 
             $user = $request->user();
             $business = Business::findOrFail($request->business_id);
+            $amount = round($request->amount / 100, 2);
+            $referenceId = 'CRYPTO-' . time() . '-' . $user->id;
 
-            // Create transaction record
-            $transaction = Transaction::create([
-                'user_id' => $user->id,
-                'business_id' => $business->id,
-                'amount' => $request->amount,
-                'type' => 'investment',
-                'status' => 'pending',
-                'payment_method' => 'cryptocurrency',
-                'reference' => 'CRYPTO-' . time(),
-                'metadata' => [
+            $result = $paymentService->createOfflineInvestmentTransaction(
+                $user,
+                $business,
+                $amount,
+                $referenceId,
+                'cryptocurrency',
+                [
                     'payment_intent' => $request->payment_intent,
                     'crypto_type' => $request->crypto_type,
-                ],
-            ]);
+                ]
+            );
 
-            // Create investment record
-            $investment = Investment::create([
-                'user_id' => $user->id,
-                'business_id' => $business->id,
-                'amount' => $request->amount,
-                'equity_percentage' => $this->calculateEquityPercentage($request->amount, $business),
-                'status' => 'pending',
-                'transaction_id' => $transaction->id,
-            ]);
-
-                return response()->json([
-                    'success' => true,
+            return response()->json([
+                'success' => true,
                 'message' => 'Cryptocurrency payment initiated',
-                'transaction_id' => $transaction->id,
-                'investment_id' => $investment->id,
+                'transaction_id' => $result['transaction_id'],
+                'investment_id' => $result['investment_id'],
             ]);
 
         } catch (\Exception $e) {
@@ -827,21 +816,21 @@ class PaymentController extends Controller
     /**
      * Get payment methods for user
      */
-    public function getPaymentMethods(Request $request): JsonResponse
+    public function getPaymentMethods(Request $request, PaymentService $paymentService): JsonResponse
     {
         try {
-            $user = $request->user();
+            $result = $paymentService->listSavedPaymentMethods($request->user());
 
-            // Get saved payment methods from Stripe
-            $paymentMethods = [];
-            
-            // In a real implementation, you would fetch saved payment methods from Stripe
-            // For now, return empty array
-            $paymentMethods = [];
-
+            if (!$result['success']) {
                 return response()->json([
-                    'success' => true,
-                'data' => $paymentMethods,
+                    'success' => false,
+                    'message' => $result['error'] ?? 'Failed to get payment methods',
+                ], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $result['data'],
             ]);
 
         } catch (\Exception $e) {
@@ -860,7 +849,7 @@ class PaymentController extends Controller
     /**
      * Save payment method
      */
-    public function savePaymentMethod(Request $request): JsonResponse
+    public function savePaymentMethod(Request $request, PaymentService $paymentService): JsonResponse
     {
         try {
             $request->validate([
@@ -868,14 +857,22 @@ class PaymentController extends Controller
                 'type' => 'required|string|in:card,bank_account',
             ]);
 
-            $user = $request->user();
+            $result = $paymentService->savePaymentMethod(
+                $request->user(),
+                $request->payment_method_id
+            );
 
-            // In a real implementation, you would save the payment method to Stripe
-            // For now, just return success
+            if (!$result['success']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['error'] ?? 'Failed to save payment method',
+                ], 400);
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Payment method saved successfully',
+                'data' => $result['data'],
             ]);
 
         } catch (\Exception $e) {
@@ -1082,19 +1079,30 @@ class PaymentController extends Controller
         try {
             $user = $request->user();
             
-            // Get analytics data
-            $totalInvested = Investment::where('user_id', $user->id)
+            $userId = $user->id;
+
+            $totalInvested = Investment::where('investor_id', $userId)
                 ->where('status', 'completed')
                 ->sum('amount');
 
-            $totalTransactions = Transaction::where('user_id', $user->id)->count();
-
-            $successfulTransactions = Transaction::where('user_id', $user->id)
+            $completedInvestments = Investment::where('investor_id', $userId)
                 ->where('status', 'completed')
                 ->count();
 
-            $successRate = $totalTransactions > 0 
-                ? round(($successfulTransactions / $totalTransactions) * 100, 2) 
+            $totalTransactions = Transaction::where(function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->orWhere('buyer_id', $userId);
+            })->count();
+
+            $successfulTransactions = Transaction::where(function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->orWhere('buyer_id', $userId);
+            })
+                ->where('status', 'completed')
+                ->count();
+
+            $successRate = $totalTransactions > 0
+                ? round(($successfulTransactions / $totalTransactions) * 100, 2)
                 : 0;
 
             $analytics = [
@@ -1102,8 +1110,8 @@ class PaymentController extends Controller
                 'total_transactions' => $totalTransactions,
                 'successful_transactions' => $successfulTransactions,
                 'success_rate' => $successRate,
-                'average_investment' => $totalTransactions > 0 
-                    ? round($totalInvested / $totalTransactions, 2) 
+                'average_investment' => $completedInvestments > 0
+                    ? round($totalInvested / $completedInvestments, 2)
                     : 0,
             ];
 
@@ -1124,16 +1132,4 @@ class PaymentController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Calculate equity percentage based on investment amount and business valuation
-     */
-    private function calculateEquityPercentage(float $amount, Business $business): float
-    {
-        if ($business->valuation <= 0) {
-            return 0;
-        }
-
-        return round(($amount / $business->valuation) * 100, 4);
-    }
-} 
+}

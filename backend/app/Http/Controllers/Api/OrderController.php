@@ -166,19 +166,17 @@ class OrderController extends Controller
             'data' => [
                 'order_number' => $order->order_number,
                 'status' => $order->status,
+                'product_name' => $order->product_name,
                 'shipping_carrier' => $order->shipping_carrier,
                 'tracking_number' => $order->tracking_number,
                 'shipped_at' => $order->shipped_at,
                 'delivered_at' => $order->delivered_at,
                 'timeline' => $order->statusHistories()
                     ->orderBy('created_at')
-                    ->get(['from_status', 'to_status', 'notes', 'created_at'])
+                    ->get(['from_status', 'to_status', 'created_at'])
                     ->map(fn ($entry) => [
                         'status' => $entry->to_status,
                         'previous_status' => $entry->from_status,
-                        'from_status' => $entry->from_status,
-                        'to_status' => $entry->to_status,
-                        'notes' => $entry->notes,
                         'created_at' => $entry->created_at,
                     ])
                     ->values(),

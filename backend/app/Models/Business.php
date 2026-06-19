@@ -173,6 +173,19 @@ class Business extends Model
     }
 
     /**
+     * Remaining amount this business can still raise.
+     */
+    public function remainingFunding(): float
+    {
+        $funded = (float) ($this->funded_amount ?? 0);
+        if ($funded <= 0) {
+            $funded = (float) $this->total_invested;
+        }
+
+        return max(0, (float) $this->funding_goal - $funded);
+    }
+
+    /**
      * Increment the views count.
      */
     public function incrementViews()

@@ -145,6 +145,14 @@ class InvestmentController extends Controller
                 ], 422);
             }
 
+            if ($request->amount > $business->remainingFunding()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Investment amount exceeds remaining funding goal of ' .
+                        number_format($business->remainingFunding(), 2),
+                ], 422);
+            }
+
             DB::beginTransaction();
 
             try {
@@ -641,8 +649,14 @@ class InvestmentController extends Controller
             $pendingInvestments = $investments->where('status', 'pending')->count();
             $approvedInvestments = $investments->where('status', 'approved')->count();
 
-            // Mock portfolio value calculation (in real app, this would be based on business performance)
-            $portfolioValue = $totalInvested * 1.12; // Assuming 12% average return
+            $portfolioValue = $investments->sum(function (Investment $investment) {
+                $business = $investment->business;
+                if (! $business || (float) $business->valuation <= 0) {
+                    return (float) $investment->amount;
+                }
+
+                return (float) $business->valuation * ((float) $investment->equity_percentage / 100);
+            });
 
             return response()->json([
                 'success' => true,
@@ -668,6 +682,65 @@ class InvestmentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch investment portfolio'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get investment return history derived from portfolio positions.
+     */
+    public function getInvestmentReturns(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            $investments = Investment::with(['business:id,name,valuation,profit_margin'])
+                ->where('investor_id', $user->id)
+                ->whereIn('status', ['completed', 'approved'])
+                ->orderByDesc('updated_at')
+                ->get();
+
+            $returns = $investments->map(function (Investment $investment) {
+                $business = $investment->business;
+                $principal = (float) $investment->amount;
+                $currentValue = $business && (float) $business->valuation > 0
+                    ? (float) $business->valuation * ((float) $investment->equity_percentage / 100)
+                    : $principal;
+                $gain = round(max(0, $currentValue - $principal), 2);
+                $returnDate = $investment->updated_at ?? $investment->created_at;
+
+                return [
+                    'id' => $investment->id,
+                    'investment_id' => $investment->id,
+                    'business_name' => $business?->name ?? 'Unknown business',
+                    'return_type' => $investment->status === 'completed' ? 'profit_share' : 'dividend',
+                    'amount' => $gain,
+                    'principal' => $principal,
+                    'current_value' => round($currentValue, 2),
+                    'return_date' => $returnDate?->toIso8601String(),
+                    'period' => $returnDate?->format('M Y'),
+                    'status' => $investment->status === 'completed' ? 'paid' : 'pending',
+                ];
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $returns,
+                'meta' => [
+                    'total_returns' => round($returns->sum('amount'), 2),
+                    'paid_returns' => round($returns->where('status', 'paid')->sum('amount'), 2),
+                    'pending_returns' => round($returns->where('status', 'pending')->sum('amount'), 2),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch investment returns', [
+                'user_id' => $request->user()->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch investment returns',
             ], 500);
         }
     }
@@ -701,6 +774,14 @@ class InvestmentController extends Controller
             }
 
             $amount = $request->amount;
+
+            if ($amount > $business->remainingFunding()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Investment amount exceeds remaining funding goal',
+                ], 422);
+            }
+
             $equityPercentage = ($amount / $business->valuation) * 100;
             
             // Mock potential return calculation (in real app, this would be more sophisticated)

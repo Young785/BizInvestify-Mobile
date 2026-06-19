@@ -17,6 +17,7 @@ class TwoFactorMiddleware
     private const SKIP_ENDPOINTS = [
         'api/check-2fa-status',
         'api/verify-2fa-session',
+        'api/verify-2fa-recovery',
         'api/me',
         'api/logout',
         'api/setup-2fa',

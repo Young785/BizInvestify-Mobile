@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Support\Facades\Log;
+use Laravel\Sanctum\PersonalAccessToken;
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
 use Ratchet\WebSocket\WsServer;
@@ -264,13 +265,21 @@ class WebSocketService implements MessageComponentInterface
 
     protected function verifyToken($token)
     {
-        // Implement token verification logic
-        // This should verify the JWT token and return the user
         try {
-            // Use Laravel Sanctum or JWT to verify token
-            // For now, return null - implement based on your auth system
-            return null;
+            if (! $token || ! is_string($token)) {
+                return null;
+            }
+
+            $accessToken = PersonalAccessToken::findToken($token);
+            if (! $accessToken) {
+                return null;
+            }
+
+            $user = $accessToken->tokenable;
+            return $user instanceof User ? $user : null;
         } catch (\Exception $e) {
+            Log::warning('WebSocket token verification failed: '.$e->getMessage());
+
             return null;
         }
     }

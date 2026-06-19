@@ -109,19 +109,6 @@ Route::post('/webhooks/stripe', [PaymentController::class, 'handleWebhook']);
 Route::post('/webhooks/paystack', [PaymentController::class, 'handlePaystackWebhook']);
 Route::post('/webhooks/flutterwave', [PaymentController::class, 'handleFlutterwaveWebhook']);
 
-// Payment routes (require authentication)
-Route::middleware(['auth:sanctum', 'rate_limit:api,120,1'])->group(function () {
-    Route::post('/payments/create-intent', [PaymentController::class, 'createPaymentIntent']);
-    Route::post('/payments/bank-transfer', [PaymentController::class, 'processBankTransfer']);
-    Route::post('/payments/crypto', [PaymentController::class, 'processCryptoPayment']);
-    Route::get('/payments/methods', [PaymentController::class, 'getPaymentMethods']);
-    Route::post('/payments/methods', [PaymentController::class, 'savePaymentMethod']);
-    Route::get('/payments/transactions', [PaymentController::class, 'getTransactionHistory']);
-    Route::get('/payments/status/{paymentIntentId}', [PaymentController::class, 'getPaymentStatus']);
-    Route::post('/payments/cancel', [PaymentController::class, 'cancelPayment']);
-    Route::get('/payments/analytics', [PaymentController::class, 'getPaymentAnalytics']);
-});
-
 // Chat routes (require authentication)
 Route::middleware(['auth:sanctum', 'rate_limit:chat,60,1'])->group(function () {
     Route::get('/chat/rooms', [ChatController::class, 'getRooms']);
@@ -167,6 +154,7 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,120,1', \App\Http\Middleware\
 
         // Session-based 2FA verification routes
         Route::post('/verify-2fa-session', [AuthController::class, 'verify2FAForSession']);
+        Route::post('/verify-2fa-recovery', [AuthController::class, 'verify2FARecoveryCode']);
         Route::get('/check-2fa-status', [AuthController::class, 'check2FAVerificationStatus']);
     });
 
@@ -229,6 +217,8 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,120,1', \App\Http\Middleware\
         Route::get('/investments/{investment}', [InvestmentController::class, 'show']);
         Route::get('/businesses/{business}/investments', [InvestmentController::class, 'byBusiness']);
         Route::get('/investments/user/portfolio', [InvestmentController::class, 'getUserPortfolio']);
+        Route::get('/investments/user/returns', [InvestmentController::class, 'getInvestmentReturns']);
+        Route::post('/investments/calculate-returns', [InvestmentController::class, 'calculateReturns']);
     });
     Route::middleware('permission:investments.create')->group(function () {
         Route::post('/investments', [InvestmentController::class, 'store']);
@@ -270,6 +260,14 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,120,1', \App\Http\Middleware\
 
         Route::get('/payments/available-gateways', [PaymentController::class, 'getAvailableGateways']);
 
+        Route::post('/payments/create-intent', [PaymentController::class, 'createPaymentIntent']);
+        Route::post('/payments/bank-transfer', [PaymentController::class, 'processBankTransfer']);
+        Route::post('/payments/crypto', [PaymentController::class, 'processCryptoPayment']);
+        Route::get('/payments/methods', [PaymentController::class, 'getPaymentMethods']);
+        Route::post('/payments/methods', [PaymentController::class, 'savePaymentMethod']);
+        Route::get('/payments/status/{paymentIntentId}', [PaymentController::class, 'getPaymentStatus']);
+        Route::post('/payments/cancel', [PaymentController::class, 'cancelPayment']);
+
         // Escrow routes
         Route::post('/payments/subscription-intent', [PaymentController::class, 'createSubscriptionPaymentIntent']);
         Route::post('/payments/featured-listing-intent', [PaymentController::class, 'createFeaturedListingPaymentIntent']);
@@ -285,6 +283,7 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,120,1', \App\Http\Middleware\
     });
     Route::get('/payments/wallet-balance', [PaymentController::class, 'getWalletBalance']);
     Route::get('/payments/transaction-history', [PaymentController::class, 'getTransactionHistory']);
+    Route::get('/payments/analytics', [PaymentController::class, 'getPaymentAnalytics']);
 
     // Wallet, bank accounts & withdrawals
     Route::get('/wallet/summary', [WalletController::class, 'summary']);

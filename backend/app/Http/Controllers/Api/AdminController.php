@@ -14,6 +14,9 @@ use App\Models\Transaction;
 use App\Models\Message;
 use App\Models\ActivityLog;
 use App\Models\Kyc;
+use App\Models\FeaturedListing;
+use App\Models\SupportTicket;
+use App\Services\FeaturedListingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -1181,11 +1184,62 @@ class AdminController extends Controller
     public function getFlaggedListings(Request $request): JsonResponse
     {
         try {
-            $listings = [];
+            $featuredListings = FeaturedListing::with(['user:id,first_name,last_name,email'])
+                ->where('status', 'pending')
+                ->latest()
+                ->get()
+                ->map(fn (FeaturedListing $listing) => [
+                    'id' => $listing->id,
+                    'type' => 'featured_listing',
+                    'title' => $listing->title,
+                    'status' => $listing->status,
+                    'submitted_at' => $listing->created_at,
+                    'owner' => $listing->user,
+                    'listable_type' => $listing->listable_type,
+                    'listable_id' => $listing->listable_id,
+                ]);
+
+            $products = Product::with(['seller:id,first_name,last_name,email'])
+                ->where('status', 'inactive')
+                ->latest()
+                ->get()
+                ->map(fn (Product $product) => [
+                    'id' => $product->id,
+                    'type' => 'product',
+                    'title' => $product->title,
+                    'status' => $product->status,
+                    'submitted_at' => $product->created_at,
+                    'owner' => $product->seller,
+                ]);
+
+            $businesses = Business::with(['seller:id,first_name,last_name,email'])
+                ->where('status', 'inactive')
+                ->latest()
+                ->get()
+                ->map(fn (Business $business) => [
+                    'id' => $business->id,
+                    'type' => 'business',
+                    'title' => $business->name,
+                    'status' => $business->status,
+                    'submitted_at' => $business->created_at,
+                    'owner' => $business->seller,
+                ]);
+
+            $listings = $featuredListings
+                ->concat($products)
+                ->concat($businesses)
+                ->sortByDesc('submitted_at')
+                ->values();
 
             return response()->json([
                 'success' => true,
-                'data' => $listings
+                'data' => $listings,
+                'meta' => [
+                    'total' => $listings->count(),
+                    'featured_listings' => $featuredListings->count(),
+                    'products' => $products->count(),
+                    'businesses' => $businesses->count(),
+                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Admin get flagged listings error: ' . $e->getMessage());
@@ -1199,12 +1253,33 @@ class AdminController extends Controller
     /**
      * Approve listing
      */
-    public function approveListing(Request $request, $listingId): JsonResponse
+    public function approveListing(Request $request, $listingId, FeaturedListingService $featuredListingService): JsonResponse
     {
         try {
+            $validated = $request->validate([
+                'type' => 'required|in:featured_listing,product,business',
+            ]);
+
+            $admin = $request->user();
+
+            switch ($validated['type']) {
+                case 'featured_listing':
+                    $listing = FeaturedListing::findOrFail($listingId);
+                    $featuredListingService->approve($listing, $admin);
+                    break;
+                case 'product':
+                    $product = Product::findOrFail($listingId);
+                    $product->update(['status' => 'active']);
+                    break;
+                case 'business':
+                    $business = Business::findOrFail($listingId);
+                    $business->update(['status' => 'active']);
+                    break;
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Listing approved successfully'
+                'message' => 'Listing approved successfully',
             ]);
         } catch (\Exception $e) {
             Log::error('Admin approve listing error: ' . $e->getMessage());
@@ -1218,12 +1293,32 @@ class AdminController extends Controller
     /**
      * Reject listing
      */
-    public function rejectListing(Request $request, $listingId): JsonResponse
+    public function rejectListing(Request $request, $listingId, FeaturedListingService $featuredListingService): JsonResponse
     {
         try {
+            $validated = $request->validate([
+                'type' => 'required|in:featured_listing,product,business',
+                'reason' => 'nullable|string|max:1000',
+            ]);
+
+            $admin = $request->user();
+
+            switch ($validated['type']) {
+                case 'featured_listing':
+                    $listing = FeaturedListing::findOrFail($listingId);
+                    $featuredListingService->reject($listing, $admin, $validated['reason'] ?? 'Rejected by moderator');
+                    break;
+                case 'product':
+                    Product::where('id', $listingId)->update(['status' => 'inactive']);
+                    break;
+                case 'business':
+                    Business::where('id', $listingId)->update(['status' => 'inactive']);
+                    break;
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Listing rejected successfully'
+                'message' => 'Listing rejected successfully',
             ]);
         } catch (\Exception $e) {
             Log::error('Admin reject listing error: ' . $e->getMessage());
@@ -1240,11 +1335,25 @@ class AdminController extends Controller
     public function getDisputes(Request $request): JsonResponse
     {
         try {
-            $disputes = [];
+            $disputes = SupportTicket::with(['user:id,first_name,last_name,email', 'assignedTo:id,first_name,last_name'])
+                ->whereIn('status', ['open', 'in_progress'])
+                ->where(function ($query) {
+                    $query->where('category', 'billing')
+                        ->orWhere('priority', 'high')
+                        ->orWhere('priority', 'urgent');
+                })
+                ->latest()
+                ->paginate($request->integer('per_page', 20));
 
             return response()->json([
                 'success' => true,
-                'data' => $disputes
+                'data' => $disputes->items(),
+                'meta' => [
+                    'current_page' => $disputes->currentPage(),
+                    'last_page' => $disputes->lastPage(),
+                    'per_page' => $disputes->perPage(),
+                    'total' => $disputes->total(),
+                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Admin get disputes error: ' . $e->getMessage());
@@ -1261,9 +1370,33 @@ class AdminController extends Controller
     public function resolveDispute(Request $request, $disputeId): JsonResponse
     {
         try {
+            $validated = $request->validate([
+                'resolution' => 'nullable|string|max:2000',
+                'status' => 'nullable|in:resolved,closed',
+            ]);
+
+            $ticket = SupportTicket::where('id', $disputeId)
+                ->orWhere('ticket_number', $disputeId)
+                ->firstOrFail();
+
+            $ticket->update([
+                'status' => $validated['status'] ?? 'resolved',
+                'resolved_at' => now(),
+                'resolved_by' => $request->user()->id,
+            ]);
+
+            if (! empty($validated['resolution'])) {
+                $ticket->threadMessages()->create([
+                    'user_id' => $request->user()->id,
+                    'message' => $validated['resolution'],
+                    'is_staff' => true,
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Dispute resolved successfully'
+                'message' => 'Dispute resolved successfully',
+                'data' => $ticket->fresh(['user', 'assignedTo', 'threadMessages']),
             ]);
         } catch (\Exception $e) {
             Log::error('Admin resolve dispute error: ' . $e->getMessage());

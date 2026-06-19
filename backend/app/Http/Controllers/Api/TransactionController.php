@@ -396,7 +396,7 @@ class TransactionController extends Controller
                 ->get();
 
             $format = $request->get('format', 'csv');
-            $filename = 'transactions_' . date('Y-m-d_H-i-s') . '.' . $format;
+            $filename = 'transactions_u' . $user->id . '_' . date('Y-m-d_H-i-s') . '.' . $format;
             $disk = Storage::disk('local');
             $path = 'exports/' . $filename;
 
@@ -447,14 +447,22 @@ class TransactionController extends Controller
     /**
      * Download an exported transactions file.
      */
-    public function downloadExport(string $filename): StreamedResponse|JsonResponse
+    public function downloadExport(Request $request, string $filename): StreamedResponse|JsonResponse
     {
         try {
-            if (! preg_match('/^transactions_[\d\-_]+\.(csv|json|excel)$/', $filename)) {
+            if (! preg_match('/^transactions_u(\d+)_[\d\-_]+\.(csv|json|excel)$/', $filename, $matches)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid export filename',
                 ], 400);
+            }
+
+            $user = Auth::user();
+            if (! $user || (int) $user->id !== (int) $matches[1]) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized',
+                ], 403);
             }
 
             $path = 'exports/' . $filename;

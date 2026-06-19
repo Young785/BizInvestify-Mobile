@@ -1675,6 +1675,87 @@ class AuthController extends Controller
     }
 
     /**
+     * Verify a 2FA backup recovery code for the current session.
+     */
+    public function verify2FARecoveryCode(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|string|min:8|max:12',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid recovery code',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required',
+            ], 401);
+        }
+
+        if (! $user->requiresPerSessionTwoFactorVerification()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Two-factor authentication is not enabled for this account',
+            ], 400);
+        }
+
+        $normalizedInput = strtoupper(str_replace(' ', '', $request->code));
+        $storedCodes = json_decode($user->two_factor_recovery_codes ?? '[]', true);
+
+        if (! is_array($storedCodes)) {
+            $storedCodes = [];
+        }
+
+        $matchedIndex = null;
+        foreach ($storedCodes as $index => $storedCode) {
+            if (strtoupper(str_replace(' ', '', (string) $storedCode)) === $normalizedInput) {
+                $matchedIndex = $index;
+                break;
+            }
+        }
+
+        if ($matchedIndex === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid recovery code',
+            ], 400);
+        }
+
+        unset($storedCodes[$matchedIndex]);
+        $remainingCodes = array_values($storedCodes);
+
+        User::whereKey($user->id)->update([
+            'two_factor_recovery_codes' => json_encode($remainingCodes),
+        ]);
+
+        $user->refresh();
+
+        app(TwoFactorVerificationService::class)->markVerified($request, $user);
+
+        Log::info('2FA recovery code used for session verification', [
+            'user_id' => $user->id,
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Recovery code accepted. Two-factor authentication verified.',
+            'data' => [
+                'verification_complete' => true,
+                'remaining_recovery_codes' => count($remainingCodes),
+            ],
+        ]);
+    }
+
+    /**
      * Check if 2FA verification is required for the current session.
      */
     public function check2FAVerificationStatus(Request $request): JsonResponse

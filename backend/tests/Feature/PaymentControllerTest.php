@@ -38,6 +38,8 @@ class PaymentControllerTest extends TestCase
             'transfer_type' => 'bank_transfer',
         ];
 
+        $this->withoutMiddleware();
+
         $this->postJson('/api/payments/bank-transfer', $payload)
             ->assertStatus(200)
             ->assertJsonPath('success', true)
