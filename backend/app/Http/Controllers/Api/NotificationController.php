@@ -259,10 +259,11 @@ class NotificationController extends Controller
         return match ($category) {
             'message' => ['message'],
             'kyc' => ['kyc_approved', 'kyc_rejected'],
-            'transaction' => ['payment_received', 'transaction', 'refund'],
+            'transaction' => ['payment_received', 'transaction', 'refund', 'order_update'],
             'investment' => ['investment_received'],
             'marketplace' => ['listing_approved', 'listing_rejected'],
             'security' => ['security_alert'],
+            'system' => ['subscription_activated', 'info', 'system_maintenance'],
             default => [],
         };
     }
