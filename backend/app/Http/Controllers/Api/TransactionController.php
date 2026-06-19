@@ -104,7 +104,8 @@ class TransactionController extends Controller
             $transaction = Transaction::where('id', $transactionId)
                 ->where(function ($q) use ($user) {
                     $q->where('buyer_id', $user->id)
-                      ->orWhere('seller_id', $user->id);
+                      ->orWhere('seller_id', $user->id)
+                      ->orWhere('user_id', $user->id);
                 })
                 ->with(['buyer', 'seller'])
                 ->first();
@@ -174,12 +175,12 @@ class TransactionController extends Controller
             $listing = null;
             if ($request->listing_type === 'product') {
                 $listing = Product::where('id', $request->listing_id)
-                    ->where('user_id', $request->seller_id)
+                    ->where('seller_id', $request->seller_id)
                     ->where('status', 'active')
                     ->first();
             } elseif ($request->listing_type === 'business') {
                 $listing = Business::where('id', $request->listing_id)
-                    ->where('user_id', $request->seller_id)
+                    ->where('seller_id', $request->seller_id)
                     ->where('status', 'active')
                     ->first();
             }

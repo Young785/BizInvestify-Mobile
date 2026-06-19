@@ -161,7 +161,7 @@ class PaymentService
                     'type' => 'business_investment',
                     'stripe_payment_intent_id' => $paymentIntent->id
                 ]
-            ], $amount, 'stripe', 'investment', $user->id, $business->user_id);
+            ], $amount, 'stripe', 'investment', $user->id, $business->seller_id);
 
             return [
                 'success' => true,

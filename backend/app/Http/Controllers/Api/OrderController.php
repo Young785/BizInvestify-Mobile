@@ -18,11 +18,25 @@ class OrderController extends Controller
     {
     }
 
+    private function authorizeParticipant(Order $order): ?JsonResponse
+    {
+        $userId = (int) Auth::id();
+        $isBuyer = (int) $order->user_id === $userId;
+        $isSeller = (int) ($order->seller_id ?? 0) === $userId
+            || ((int) ($order->seller_id ?? 0) === 0 && (int) $order->user_id === $userId);
+
+        if (! $isBuyer && ! $isSeller) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        return null;
+    }
+
     private function authorizeSeller(Order $order): ?JsonResponse
     {
-        $sellerId = $order->seller_id ?? $order->user_id;
+        $sellerId = (int) ($order->seller_id ?? $order->user_id);
 
-        if ((int) $sellerId !== (int) Auth::id()) {
+        if ($sellerId !== (int) Auth::id()) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -129,7 +143,7 @@ class OrderController extends Controller
 
     public function show(Order $order): JsonResponse
     {
-        if ($response = $this->authorizeSeller($order)) {
+        if ($response = $this->authorizeParticipant($order)) {
             return $response;
         }
 

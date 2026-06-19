@@ -124,10 +124,8 @@ class Order extends Model
     public function scopeForUser($query, $userId)
     {
         return $query->where(function ($q) use ($userId) {
-            $q->where('seller_id', $userId)
-              ->orWhere(function ($legacy) use ($userId) {
-                  $legacy->whereNull('seller_id')->where('user_id', $userId);
-              });
+            $q->where('user_id', $userId)
+                ->orWhere('seller_id', $userId);
         });
     }
 

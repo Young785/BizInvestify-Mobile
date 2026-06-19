@@ -88,7 +88,7 @@ class InvestmentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'business_id' => 'required|uuid|exists:businesses,id',
+            'business_id' => 'required|integer|exists:businesses,id',
             'amount' => 'required|numeric|min:100|max:999999999.99',
             'message' => 'nullable|string|max:1000'
         ]);
@@ -678,7 +678,7 @@ class InvestmentController extends Controller
     public function calculateReturns(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'business_id' => 'required|uuid|exists:businesses,id',
+            'business_id' => 'required|integer|exists:businesses,id',
             'amount' => 'required|numeric|min:100|max:999999999.99'
         ]);
 
