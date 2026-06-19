@@ -21,7 +21,10 @@ class FeaturedListingService
 
         $listing->approve($admin->id);
 
-        return $listing->fresh(['listable', 'user', 'transaction']);
+        $listing = $listing->fresh(['listable', 'user', 'transaction']);
+        $this->notifyListingReview($listing, 'listing_approved', 'Featured Listing Approved', 'is now live.');
+
+        return $listing;
     }
 
     public function reject(FeaturedListing $listing, User $admin, string $reason): FeaturedListing
@@ -46,6 +49,45 @@ class FeaturedListingService
             }
         }
 
-        return $listing->fresh(['listable', 'user', 'transaction']);
+        $listing = $listing->fresh(['listable', 'user', 'transaction']);
+        $this->notifyListingReview(
+            $listing,
+            'listing_rejected',
+            'Featured Listing Rejected',
+            'was not approved.'.($reason ? ' Reason: '.$reason : '')
+        );
+
+        return $listing;
+    }
+
+    private function notifyListingReview(
+        FeaturedListing $listing,
+        string $type,
+        string $title,
+        string $messageSuffix
+    ): void {
+        $owner = $listing->user;
+        if (! $owner) {
+            return;
+        }
+
+        app(NotificationService::class)->notifyWithEmail(
+            $owner,
+            $type,
+            $title,
+            "Your promotion \"{$listing->title}\" {$messageSuffix}",
+            [
+                'featured_listing_id' => $listing->id,
+                'action_url' => '/dashboard/featured-listings',
+                'action_label' => 'View Promotions',
+                'email_details' => [
+                    'Title' => $listing->title,
+                    'Type' => ucfirst((string) ($listing->promotion_type ?? 'featured')),
+                    'Status' => ucfirst((string) $listing->status),
+                ],
+            ],
+            'high',
+            "{$title}: {$listing->title}"
+        );
     }
 }

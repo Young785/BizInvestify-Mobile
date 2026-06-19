@@ -194,7 +194,7 @@ class NotificationService
     public function mapUiType(string $type): string
     {
         return match ($type) {
-            'success', 'kyc_approved', 'payment_received', 'listing_approved' => 'success',
+            'success', 'kyc_approved', 'payment_received', 'listing_approved', 'subscription_activated' => 'success',
             'warning', 'kyc_rejected', 'security_alert', 'system_maintenance' => 'warning',
             'error' => 'error',
             default => 'info',
@@ -208,6 +208,7 @@ class NotificationService
             'kyc_approved', 'kyc_rejected' => 'kyc',
             'payment_received', 'transaction', 'refund', 'order_update' => 'transaction',
             'investment_received' => 'investment',
+            'subscription_activated' => 'system',
             'listing_approved', 'listing_rejected' => 'marketplace',
             'security_alert' => 'security',
             default => 'system',
@@ -226,7 +227,8 @@ class NotificationService
             'payment_received', 'transaction', 'refund' => '/dashboard/transactions',
             'order_update' => '/dashboard/orders',
             'investment_received' => '/dashboard/investments',
-            'listing_approved', 'listing_rejected' => '/dashboard/products',
+            'subscription_activated' => '/dashboard/settings',
+            'listing_approved', 'listing_rejected' => '/dashboard/featured-listings',
             'security_alert' => '/dashboard/profile/security',
             default => '/dashboard/notifications',
         };

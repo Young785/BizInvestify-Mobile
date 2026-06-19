@@ -787,21 +787,9 @@ class PaymentService
         } elseif ($type === 'business_investment') {
             $this->handleBusinessInvestment($transaction, $metadata);
         } elseif ($type === 'subscription') {
-            $planId = is_object($metadata) ? ($metadata->plan_id ?? null) : ($metadata['plan_id'] ?? null);
-            $planId = $planId ?? ($transaction->metadata['plan_id'] ?? null);
-            if ($planId) {
-                $user = User::find($transaction->user_id);
-                if ($user) {
-                    $this->activateSubscription($user, $planId);
-                }
-            }
+            $this->handleSubscriptionPayment($transaction, $metadata);
         } elseif ($type === 'featured_listing') {
-            $transaction->update([
-                'metadata' => array_merge($transaction->metadata ?? [], [
-                    'payment_confirmed' => true,
-                    'confirmed_at' => now()->toISOString(),
-                ]),
-            ]);
+            $this->handleFeaturedListingPayment($transaction, $metadata);
         } elseif ($type === 'escrow') {
             // Funded state handled in confirmPayment via EscrowService::markFunded
         }
@@ -1536,6 +1524,96 @@ class PaymentService
             'subscription_plan' => $planId,
             'subscription_expires_at' => $expiresAt,
         ]);
+    }
+
+    private function handleSubscriptionPayment(Transaction $transaction, $metadata): void
+    {
+        $meta = $this->parsePaymentMetadata($metadata);
+        $planId = $meta['plan_id'] ?? ($transaction->metadata['plan_id'] ?? null);
+        if (! $planId) {
+            return;
+        }
+
+        $user = User::find($transaction->user_id);
+        if (! $user) {
+            return;
+        }
+
+        $this->activateSubscription($user, (string) $planId);
+        $user->refresh();
+
+        $planName = $this->resolvePlanDisplayName((string) $planId);
+        $expires = $user->subscription_expires_at?->format('M j, Y') ?? 'N/A';
+        $currency = strtoupper((string) ($transaction->currency ?: 'USD'));
+
+        app(NotificationService::class)->notifyWithEmail(
+            $user,
+            'subscription_activated',
+            'Subscription Activated',
+            "Your {$planName} plan is now active until {$expires}.",
+            [
+                'plan_id' => $planId,
+                'transaction_id' => $transaction->id,
+                'action_url' => '/dashboard/settings',
+                'action_label' => 'Manage Subscription',
+                'email_details' => [
+                    'Plan' => $planName,
+                    'Expires' => $expires,
+                    'Amount' => $currency.' '.number_format((float) $transaction->amount, 2),
+                ],
+            ],
+            'high',
+            "Subscription activated: {$planName}"
+        );
+    }
+
+    private function handleFeaturedListingPayment(Transaction $transaction, $metadata): void
+    {
+        $transaction->update([
+            'metadata' => array_merge($transaction->metadata ?? [], [
+                'payment_confirmed' => true,
+                'confirmed_at' => now()->toISOString(),
+            ]),
+        ]);
+
+        $user = User::find($transaction->user_id);
+        if (! $user) {
+            return;
+        }
+
+        $currency = strtoupper((string) ($transaction->currency ?: 'USD'));
+
+        app(NotificationService::class)->notifyWithEmail(
+            $user,
+            'transaction',
+            'Promotion Payment Confirmed',
+            'Your featured listing payment was successful. Complete your promotion setup to go live.',
+            [
+                'transaction_id' => $transaction->id,
+                'action_url' => '/dashboard/featured-listings/create',
+                'action_label' => 'Create Promotion',
+                'email_details' => [
+                    'Amount' => $currency.' '.number_format((float) $transaction->amount, 2),
+                ],
+            ],
+            'medium',
+            'Featured listing payment confirmed'
+        );
+    }
+
+    private function resolvePlanDisplayName(string $planId): string
+    {
+        $resolved = $this->resolvePlanPrice($planId);
+        if ($resolved && isset($resolved['plan']['name'])) {
+            $name = $resolved['plan']['name'];
+            if (is_array($name)) {
+                return (string) ($name['en'] ?? $planId);
+            }
+
+            return (string) $name;
+        }
+
+        return ucfirst(str_replace('_', ' ', $planId));
     }
 
     private function flutterwaveRequest(string $secretKey, string $method, string $url, ?array $payload = null): string
