@@ -44,6 +44,7 @@ class RoleSeeder extends Seeder
             
             // Transaction management
             'admin.transactions', 'transactions.manage', 'transactions.refund', 'transactions.export', 'transactions.analytics',
+            'payments.manage', 'payments.view', 'payments.export',
             
             // Reports
             'reports.view', 'reports.export', 'reports.custom', 'reports.scheduled', 'reports.analytics',
@@ -64,7 +65,7 @@ class RoleSeeder extends Seeder
             'security.view', 'security.manage', 'security.audit', 'security.2fa_manage',
             
             // Settings
-            'settings.view', 'settings.edit', 'settings.system', 'settings.email', 'settings.payment', 'settings.notifications',
+            'system.settings', 'settings.view', 'settings.edit', 'settings.system', 'settings.email', 'settings.payment', 'settings.notifications',
             
             // Monitoring
             'monitoring.view', 'monitoring.alerts', 'monitoring.metrics', 'monitoring.logs',

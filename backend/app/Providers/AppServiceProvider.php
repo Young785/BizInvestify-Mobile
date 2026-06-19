@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Message;
+use App\Models\Notification;
+use App\Observers\MessageRealtimeObserver;
+use App\Observers\NotificationRealtimeObserver;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
@@ -26,5 +30,8 @@ class AppServiceProvider extends ServiceProvider
             'product' => \App\Models\Product::class,
             'business' => \App\Models\Business::class,
         ]);
+
+        Notification::observe(NotificationRealtimeObserver::class);
+        Message::observe(MessageRealtimeObserver::class);
     }
 }

@@ -32,6 +32,11 @@ class User extends Authenticatable
         'city',
         'state',
         'country',
+        'country_code',
+        'preferred_currency',
+        'preferred_language',
+        'timezone',
+        'notification_preferences',
         'postal_code',
         'date_of_birth',
         'bio',
@@ -65,6 +70,19 @@ class User extends Authenticatable
         'kyc_rejection_reason',
         'stripe_customer_id',
         'stripe_account_id',
+        'subscription_plan',
+        'subscription_expires_at',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'verification_progress',
+        'total_earnings',
+        'total_invested'
     ];
 
     /**
@@ -102,12 +120,14 @@ class User extends Authenticatable
             'password' => 'hashed',
             'kyc_documents' => 'array',
             'trusted_devices' => 'array',
+            'notification_preferences' => 'array',
             'trust_score' => 'decimal:2',
             'is_verified' => 'boolean',
             'remember_device' => 'boolean',
             'kyc_verified_at' => 'datetime',
             'kyc_rejected_at' => 'datetime',
             'date_of_birth' => 'date',
+            'subscription_expires_at' => 'datetime',
         ];
     }
 
@@ -240,13 +260,25 @@ class User extends Authenticatable
     }
 
     /**
+     * Whether the user must complete per-session TOTP verification after login.
+     */
+    public function requiresPerSessionTwoFactorVerification(): bool
+    {
+        if ($this->two_factor_skipped) {
+            return false;
+        }
+
+        return $this->hasTwoFactorEnabled() && !is_null($this->two_factor_secret);
+    }
+
+    /**
      * Check if the user is fully verified (email, phone, KYC, and 2FA).
      */
     public function isFullyVerified(): bool
     {
-        return $this->isEmailVerified() 
-            && $this->isPhoneVerified() 
-            && $this->hasSubmittedKyc() 
+        return $this->isEmailVerified()
+            && $this->isPhoneVerified()
+            && $this->hasSubmittedKyc()
             && ($this->hasTwoFactorEnabled() || $this->two_factor_skipped);
     }
 
@@ -255,9 +287,9 @@ class User extends Authenticatable
      */
     public function hasCompletedRequiredSteps(): bool
     {
-        return $this->isEmailVerified() 
-            && $this->isPhoneVerified() 
-            && $this->hasSubmittedKyc() 
+        return $this->isEmailVerified()
+            && $this->isPhoneVerified()
+            && $this->hasSubmittedKyc()
             && ($this->hasTwoFactorEnabled() || $this->two_factor_skipped);
     }
 
@@ -347,19 +379,21 @@ class User extends Authenticatable
      */
     public function verifyEmail(string $token): bool
     {
-        if ($this->email_verification_token === $token && 
-            $this->email_verification_expires_at && 
-            $this->email_verification_expires_at->isFuture()) {
-            
+        if (
+            $this->email_verification_token === $token &&
+            $this->email_verification_expires_at &&
+            $this->email_verification_expires_at->isFuture()
+        ) {
+
             $this->update([
                 'email_verified_at' => now(),
                 'email_verification_token' => null,
                 'email_verification_expires_at' => null,
             ]);
-            
+
             return true;
         }
-        
+
         return false;
     }
 
@@ -368,19 +402,21 @@ class User extends Authenticatable
      */
     public function verifyPhone(string $token): bool
     {
-        if ($this->phone_verification_token === $token && 
-            $this->phone_verification_expires_at && 
-            $this->phone_verification_expires_at->isFuture()) {
-            
+        if (
+            $this->phone_verification_token === $token &&
+            $this->phone_verification_expires_at &&
+            $this->phone_verification_expires_at->isFuture()
+        ) {
+
             $this->update([
                 'phone_verified_at' => now(),
                 'phone_verification_token' => null,
                 'phone_verification_expires_at' => null,
             ]);
-            
+
             return true;
         }
-        
+
         return false;
     }
 

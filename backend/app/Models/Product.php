@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
@@ -15,6 +16,7 @@ class Product extends Model
     protected $fillable = [
         'seller_id',
         'title',
+        'slug',
         'description',
         'price',
         'currency',
@@ -33,6 +35,52 @@ class Product extends Model
         'inventory_count' => 'integer',
         'views_count' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Product $product) {
+            if (empty($product->slug)) {
+                $product->slug = static::generateUniqueSlug($product->title);
+            }
+        });
+
+        static::updating(function (Product $product) {
+            if ($product->isDirty('title') && ! $product->isDirty('slug')) {
+                $product->slug = static::generateUniqueSlug($product->title, $product->id);
+            }
+        });
+    }
+
+    public static function generateUniqueSlug(string $title, ?int $excludeId = null): string
+    {
+        $slug = Str::slug($title) ?: 'product';
+        $original = $slug;
+        $count = 1;
+
+        while (
+            static::query()
+                ->where('slug', $slug)
+                ->when($excludeId, fn ($query) => $query->where('id', '!=', $excludeId))
+                ->exists()
+        ) {
+            $slug = $original.'-'.$count++;
+        }
+
+        return $slug;
+    }
+
+    public static function findBySlugOrId(string $identifier): ?self
+    {
+        return static::query()
+            ->where(function ($query) use ($identifier) {
+                $query->where('slug', $identifier);
+
+                if (ctype_digit($identifier)) {
+                    $query->orWhere('id', (int) $identifier);
+                }
+            })
+            ->first();
+    }
 
     /**
      * Get the seller that owns the product.

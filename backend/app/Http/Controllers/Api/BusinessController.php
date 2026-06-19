@@ -241,8 +241,14 @@ class BusinessController extends Controller
             $business = Business::with(['seller', 'investments' => function($query) {
                 $query->where('status', 'completed')->with('investor');
             }])
-                ->where('id', $id)
                 ->where('status', 'active')
+                ->where(function ($query) use ($id) {
+                    $query->where('slug', $id);
+
+                    if (ctype_digit($id)) {
+                        $query->orWhere('id', (int) $id);
+                    }
+                })
                 ->first();
 
             if (!$business) {
@@ -280,6 +286,46 @@ class BusinessController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch business'
+            ], 500);
+        }
+    }
+
+    /**
+     * Display business for owner editing (any status, slug or id).
+     */
+    public function showForOwner(Request $request, string $id): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $business = Business::with(['seller', 'investments'])->findBySlugOrId($id);
+
+            if (! $business) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Business not found',
+                ], 404);
+            }
+
+            if ($business->seller_id !== $user->id && ! $user->isAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You can only view your own business listings',
+                ], 403);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $business,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch business for owner', [
+                'business_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch business',
             ], 500);
         }
     }
@@ -326,7 +372,7 @@ class BusinessController extends Controller
 
         try {
             $user = $request->user();
-            $business = Business::find($id);
+            $business = Business::findBySlugOrId($id);
 
             if (!$business) {
                 return response()->json([
@@ -414,7 +460,7 @@ class BusinessController extends Controller
     {
         try {
             $user = $request->user();
-            $business = Business::find($id);
+            $business = Business::findBySlugOrId($id);
 
             if (!$business) {
                 return response()->json([
@@ -730,7 +776,7 @@ class BusinessController extends Controller
     public function getRelated(Request $request, string $businessId): JsonResponse
     {
         try {
-            $business = Business::find($businessId);
+            $business = Business::findBySlugOrId($businessId);
             
             if (!$business) {
                 return response()->json([
@@ -740,7 +786,7 @@ class BusinessController extends Controller
             }
 
             $relatedBusinesses = Business::with(['seller', 'investments'])
-                ->where('id', '!=', $businessId)
+                ->where('id', '!=', $business->id)
                 ->where('status', 'active')
                 ->where(function($query) use ($business) {
                     $query->where('industry', $business->industry)
@@ -871,7 +917,14 @@ class BusinessController extends Controller
         try {
             $business = Business::with(['seller', 'investments'])
                 ->where('status', 'active')
-                ->find($id);
+                ->where(function ($query) use ($id) {
+                    $query->where('slug', $id);
+
+                    if (ctype_digit($id)) {
+                        $query->orWhere('id', (int) $id);
+                    }
+                })
+                ->first();
 
             if (!$business) {
                 return response()->json([

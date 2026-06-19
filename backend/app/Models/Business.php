@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Str;
 
 class Business extends Model
 {
@@ -15,10 +16,12 @@ class Business extends Model
     protected $fillable = [
         'seller_id',
         'name',
+        'slug',
         'description',
         'industry',
         'valuation',
         'funding_goal',
+        'funded_amount',
         'equity_offered',
         'pitch_deck_url',
         'business_plan',
@@ -36,6 +39,7 @@ class Business extends Model
         'images' => 'array',
         'valuation' => 'decimal:2',
         'funding_goal' => 'decimal:2',
+        'funded_amount' => 'decimal:2',
         'equity_offered' => 'decimal:2',
         'revenue' => 'decimal:2',
         'profit_margin' => 'decimal:2',
@@ -43,6 +47,52 @@ class Business extends Model
         'founded_year' => 'integer',
         'views_count' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Business $business) {
+            if (empty($business->slug)) {
+                $business->slug = static::generateUniqueSlug($business->name);
+            }
+        });
+
+        static::updating(function (Business $business) {
+            if ($business->isDirty('name') && ! $business->isDirty('slug')) {
+                $business->slug = static::generateUniqueSlug($business->name, $business->id);
+            }
+        });
+    }
+
+    public static function generateUniqueSlug(string $name, ?int $excludeId = null): string
+    {
+        $slug = Str::slug($name) ?: 'business';
+        $original = $slug;
+        $count = 1;
+
+        while (
+            static::query()
+                ->where('slug', $slug)
+                ->when($excludeId, fn ($query) => $query->where('id', '!=', $excludeId))
+                ->exists()
+        ) {
+            $slug = $original.'-'.$count++;
+        }
+
+        return $slug;
+    }
+
+    public static function findBySlugOrId(string $identifier): ?self
+    {
+        return static::query()
+            ->where(function ($query) use ($identifier) {
+                $query->where('slug', $identifier);
+
+                if (ctype_digit($identifier)) {
+                    $query->orWhere('id', (int) $identifier);
+                }
+            })
+            ->first();
+    }
 
     /**
      * Get the seller that owns the business.

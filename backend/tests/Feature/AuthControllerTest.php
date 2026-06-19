@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -59,7 +61,36 @@ class AuthControllerTest extends TestCase
             'password' => 'secret1234',
         ])->assertStatus(200)
           ->assertJsonPath('success', true)
-          ->assertJsonStructure(['data' => ['token', 'user']]);
+          ->assertJsonStructure([
+              'data' => [
+                  'token',
+                  'user' => [
+                      'id',
+                      'email',
+                      'roles',
+                      'user_permissions',
+                  ],
+              ],
+          ]);
+    }
+
+    public function test_login_includes_roles_when_assigned(): void
+    {
+        $this->seed(PermissionSeeder::class);
+        $this->seed(RoleSeeder::class);
+
+        $user = User::factory()->create([
+            'email' => 'buyer@example.com',
+            'password' => Hash::make('secret1234'),
+            'role' => 'buyer',
+        ]);
+        $user->assignRole('buyer');
+
+        $this->postJson('/api/login', [
+            'email' => 'buyer@example.com',
+            'password' => 'secret1234',
+        ])->assertStatus(200)
+          ->assertJsonPath('data.user.roles.0.name', 'buyer');
     }
 
     public function test_profile_requires_authentication(): void
@@ -75,6 +106,29 @@ class AuthControllerTest extends TestCase
             ->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.user.id', $user->id);
+    }
+
+    public function test_me_includes_roles_and_permissions(): void
+    {
+        $this->seed(PermissionSeeder::class);
+        $this->seed(RoleSeeder::class);
+
+        $user = User::factory()->create(['role' => 'buyer']);
+        $user->assignRole('buyer');
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/me')
+            ->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure([
+                'data' => [
+                    'user' => [
+                        'roles' => [
+                            ['name', 'permissions' => [['name']]],
+                        ],
+                    ],
+                ],
+            ]);
     }
 }
 

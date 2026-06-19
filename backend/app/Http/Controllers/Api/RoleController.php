@@ -24,6 +24,8 @@ class RoleController extends Controller
                 ->orderBy('name')
                 ->get()
                 ->map(function ($role) {
+                    $role->display_name = $role->display_name
+                        ?: ucwords(str_replace('_', ' ', $role->name));
                     $role->users_count = $role->users()->count();
                     return $role;
                 });

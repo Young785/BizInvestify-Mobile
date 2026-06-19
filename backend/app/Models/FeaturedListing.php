@@ -14,6 +14,7 @@ class FeaturedListing extends Model
 
     protected $fillable = [
         'user_id',
+        'transaction_id',
         'listable_type',
         'listable_id',
         'title',
@@ -71,6 +72,11 @@ class FeaturedListing extends Model
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function transaction(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class);
     }
 
     /**
@@ -157,23 +163,29 @@ class FeaturedListing extends Model
      */
     public function approve(int $adminId): bool
     {
+        if ($this->status !== 'pending') {
+            return false;
+        }
+
         return $this->update([
             'status' => 'active',
             'approved_at' => now(),
-            'approved_by' => $adminId
+            'approved_by' => $adminId,
+            'rejection_reason' => null,
         ]);
     }
 
-    /**
-     * Reject the featured listing
-     */
     public function reject(int $adminId, string $reason): bool
     {
+        if ($this->status !== 'pending') {
+            return false;
+        }
+
         return $this->update([
             'status' => 'cancelled',
             'approved_at' => now(),
             'approved_by' => $adminId,
-            'rejection_reason' => $reason
+            'rejection_reason' => $reason,
         ]);
     }
 

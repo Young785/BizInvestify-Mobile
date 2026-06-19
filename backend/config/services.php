@@ -35,6 +35,8 @@ return [
         ],
     ],
 
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+
     'stripe' => [
         'secret' => env('STRIPE_SECRET'),
         'key' => env('STRIPE_KEY'),
@@ -50,6 +52,15 @@ return [
         'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
         'commission_rate' => env('PAYSTACK_COMMISSION_RATE', 0.05), // 5%
         'investment_fee_rate' => env('PAYSTACK_INVESTMENT_FEE_RATE', 0.03), // 3%
+    ],
+
+    'flutterwave' => [
+        'secret' => env('FLUTTERWAVE_SECRET_KEY'),
+        'public' => env('FLUTTERWAVE_PUBLIC_KEY'),
+        'webhook_secret' => env('FLUTTERWAVE_WEBHOOK_SECRET'),
+        'encryption_key' => env('FLUTTERWAVE_ENCRYPTION_KEY'),
+        'commission_rate' => env('FLUTTERWAVE_COMMISSION_RATE', 0.05),
+        'investment_fee_rate' => env('FLUTTERWAVE_INVESTMENT_FEE_RATE', 0.03),
     ],
 
 ];

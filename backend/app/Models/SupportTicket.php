@@ -17,6 +17,7 @@ class SupportTicket extends Model
         'message',
         'priority',
         'category',
+        'source',
         'status',
         'assigned_to',
         'resolved_at',
@@ -43,6 +44,16 @@ class SupportTicket extends Model
     public function resolvedBy()
     {
         return $this->belongsTo(User::class, 'resolved_by');
+    }
+
+    public function threadMessages()
+    {
+        return $this->hasMany(SupportTicketMessage::class)->orderBy('created_at');
+    }
+
+    public function isLiveChat(): bool
+    {
+        return $this->source === 'live_chat';
     }
 
     // Scopes

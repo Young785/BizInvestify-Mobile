@@ -16,6 +16,7 @@ use Illuminate\Validation\Rules\Password;
 use PragmaRX\Google2FA\Google2FA;
 use App\Http\Middleware\RateLimitMiddleware;
 use App\Services\NotificationService;
+use App\Services\TwoFactorVerificationService;
 
 class AuthController extends Controller
 {
@@ -31,13 +32,13 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'phone' => 'required|string|max:20',
             'password' => ['required', 'confirmed', Password::defaults()],
-            
+
             // Professional details based on role
             'businessName' => 'required_if:role,seller|max:255',
             'businessType' => 'required_if:role,seller|max:255',
             'investmentAmount' => 'required_if:role,investor|max:255',
             'investmentFocus' => 'required_if:role,investor|max:255',
-            
+
             // Compliance
             'agreeToTerms' => 'required|accepted',
             'agreeToPrivacy' => 'required|accepted',
@@ -54,14 +55,14 @@ class AuthController extends Controller
         }
 
         try {
-        $user = User::create([
+            $user = User::create([
                 'first_name' => $request->firstName,
                 'last_name' => $request->lastName,
                 'name' => $request->firstName . ' ' . $request->lastName,
-            'email' => $request->email,
+                'email' => $request->email,
                 'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
+                'password' => Hash::make($request->password),
+                'role' => $request->role,
                 'business_name' => $request->businessName,
                 'business_type' => $request->businessType,
                 'investment_amount' => (string) $request->investmentAmount,
@@ -73,7 +74,7 @@ class AuthController extends Controller
 
             // Generate email verification token
             $emailToken = $user->generateEmailVerificationToken();
-            
+
             // Send verification email
             $this->sendEmailVerification($user, $emailToken);
 
@@ -95,9 +96,10 @@ class AuthController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'success' => false,
+                'errors' => $e->getMessage(),
                 'message' => 'Registration failed. Please try again.'
             ], 500);
         }
@@ -109,8 +111,8 @@ class AuthController extends Controller
     public function sendEmailVerification(User $user, string $token): void
     {
         try {
-            $verificationUrl = config('app.frontend_url', 'http://localhost:3000') 
-                . '/auth/verify-email?token=' . $token . '&email=' . urlencode($user->email);
+            $verificationUrl = config('app.frontend_url', 'http://localhost:3000')
+                . '/auth/verify-email/verify-token?token=' . $token . '&email=' . urlencode($user->email);
 
             $data = [
                 'user' => $user,
@@ -121,7 +123,7 @@ class AuthController extends Controller
             // Send actual email verification
             Mail::send('emails.email-verification', $data, function ($message) use ($user) {
                 $message->to($user->email, $user->name)
-                        ->subject('Verify Your Email - BizInvestify');
+                    ->subject('Verify Your Email - BizInvestify');
             });
 
             Log::info('Email verification sent', [
@@ -295,7 +297,7 @@ class AuthController extends Controller
 
         // Generate 6-digit OTP
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        
+
         // Store OTP in user record
         $user->update([
             'email_verification_otp' => $otp,
@@ -346,9 +348,11 @@ class AuthController extends Controller
         }
 
         // Check if OTP is valid and not expired
-        if ($user->email_verification_otp !== $request->otp ||
+        if (
+            $user->email_verification_otp !== $request->otp ||
             !$user->email_verification_otp_expires_at ||
-            $user->email_verification_otp_expires_at->isPast()) {
+            $user->email_verification_otp_expires_at->isPast()
+        ) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid or expired verification code'
@@ -386,7 +390,7 @@ class AuthController extends Controller
 
             Mail::send('emails.email-verification-otp', $data, function ($message) use ($user) {
                 $message->to($user->email, $user->name)
-                        ->subject('Email Verification Code - BizInvestify');
+                    ->subject('Email Verification Code - BizInvestify');
             });
 
             Log::info('Email verification OTP sent', [
@@ -440,7 +444,7 @@ class AuthController extends Controller
         }
 
         $phoneToken = $user->generatePhoneVerificationToken();
-        
+
         // In a real application, you would send SMS via Twilio, AWS SNS, etc.
         // For now, we'll just log it
         Log::info('Phone verification code sent', [
@@ -536,9 +540,9 @@ class AuthController extends Controller
             foreach ($request->documents as $document) {
                 $file = $document['file'];
                 $type = $document['type'];
-                
+
                 $path = $file->store('kyc-documents/' . $user->id, 'public');
-                
+
                 $documents[] = [
                     'type' => $type,
                     'name' => $file->getClientOriginalName(),
@@ -645,7 +649,7 @@ class AuthController extends Controller
         try {
             // Generate a verification code for email 2FA
             $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            
+
             // Store the code temporarily (not confirmed yet)
             $user->update([
                 'email_2fa_code' => $verificationCode,
@@ -661,7 +665,7 @@ class AuthController extends Controller
 
             Mail::send('emails.email-2fa-setup', $data, function ($message) use ($user) {
                 $message->to($user->email, $user->name)
-                        ->subject('Setup Email 2FA - BizInvestify');
+                    ->subject('Setup Email 2FA - BizInvestify');
             });
 
             return response()->json([
@@ -808,10 +812,12 @@ class AuthController extends Controller
 
         try {
             // Check if code matches and is not expired
-            if ($user->email_2fa_code === $request->code && 
-                $user->email_2fa_expires_at && 
-                $user->email_2fa_expires_at->isFuture()) {
-                
+            if (
+                $user->email_2fa_code === $request->code &&
+                $user->email_2fa_expires_at &&
+                $user->email_2fa_expires_at->isFuture()
+            ) {
+
                 $user->update([
                     'email_2fa_enabled' => true,
                     'email_2fa_code' => null,
@@ -852,7 +858,7 @@ class AuthController extends Controller
         // Check if user is locked out due to too many failed attempts
         if (RateLimitMiddleware::checkAuthAttempts($request, 5, 15)) {
             $retryAfter = RateLimitMiddleware::getAuthAttemptsAvailableIn($request);
-            
+
             Log::warning('Login attempt blocked due to rate limiting', [
                 'ip' => $request->ip(),
                 'email' => $request->input('email'),
@@ -893,12 +899,12 @@ class AuthController extends Controller
         if (!Auth::attempt($request->only('email', 'password'))) {
             // Record failed attempt
             RateLimitMiddleware::recordFailedAuthAttempt($request, 15);
-            
+
             // Log failed login attempt with notification service
             NotificationService::logFailedLogin($request->input('email'));
-            
+
             $remainingAttempts = RateLimitMiddleware::getRemainingAuthAttempts($request, 5);
-            
+
             Log::warning('Login failed - invalid credentials', [
                 'ip' => $request->ip(),
                 'email' => $request->input('email'),
@@ -916,7 +922,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->firstOrFail();
 
         // Check if 2FA is enabled
-        if ($user->hasTwoFactorEnabled()) {
+        if ($user->requiresPerSessionTwoFactorVerification()) {
             if (!$request->two_factor_code) {
                 Log::info('2FA code required for login', [
                     'user_id' => $user->id,
@@ -942,9 +948,9 @@ class AuthController extends Controller
                 if (!$valid) {
                     // Record failed 2FA attempt
                     RateLimitMiddleware::recordFailedAuthAttempt($request, 15);
-                    
+
                     $remainingAttempts = RateLimitMiddleware::getRemainingAuthAttempts($request, 5);
-                    
+
                     Log::warning('Invalid 2FA code provided', [
                         'user_id' => $user->id,
                         'email' => $user->email,
@@ -977,7 +983,12 @@ class AuthController extends Controller
         RateLimitMiddleware::clearAuthAttempts($request);
 
         // Create API token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $accessToken = $user->createToken('auth_token');
+        $token = $accessToken->plainTextToken;
+
+        if ($user->requiresPerSessionTwoFactorVerification() && $request->filled('two_factor_code')) {
+            app(TwoFactorVerificationService::class)->markTokenVerified($accessToken->accessToken);
+        }
 
         // Handle remember device
         if ($request->remember_device) {
@@ -1024,7 +1035,9 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Login successful',
             'data' => [
-                'user' => $user->load(['products', 'businesses', 'investments']),
+                'user' => $this->formatAuthenticatedUser(
+                    $user->load(['products', 'businesses', 'investments', 'roles.permissions', 'permissions'])
+                ),
                 'token' => $token,
                 'token_type' => 'Bearer',
                 'verification_progress' => $user->verification_progress,
@@ -1038,7 +1051,9 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $token = $request->user()->currentAccessToken();
+        app(TwoFactorVerificationService::class)->clearForToken($token);
+        $token->delete();
 
         return response()->json([
             'success' => true,
@@ -1051,12 +1066,18 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user();
-        
+        $user = $request->user()->load([
+            'products',
+            'businesses',
+            'investments',
+            'roles.permissions',
+            'permissions',
+        ]);
+
         return response()->json([
             'success' => true,
             'data' => [
-                'user' => $user->load(['products', 'businesses', 'investments']),
+                'user' => $this->formatAuthenticatedUser($user),
                 'verification_progress' => $user->verification_progress,
                 'verification_status' => [
                     'email_verified' => $user->isEmailVerified(),
@@ -1065,9 +1086,9 @@ class AuthController extends Controller
                     'kyc_submitted' => $user->hasSubmittedKyc(),
                     'kyc_status' => $user->kyc_status,
                     'two_factor_enabled' => $user->hasTwoFactorEnabled(),
-                    'fully_verified' => $user->isFullyVerified()
-                ]
-            ]
+                    'fully_verified' => $user->isFullyVerified(),
+                ],
+            ],
         ]);
     }
 
@@ -1086,6 +1107,10 @@ class AuthController extends Controller
             'city' => 'sometimes|nullable|string|max:255',
             'state' => 'sometimes|nullable|string|max:255',
             'country' => 'sometimes|nullable|string|max:255',
+            'country_code' => 'sometimes|nullable|string|size:2',
+            'preferred_currency' => 'sometimes|nullable|string|size:3',
+            'preferred_language' => 'sometimes|nullable|string|max:5',
+            'timezone' => 'sometimes|nullable|string|max:64',
             'postal_code' => 'sometimes|nullable|string|max:20',
             'date_of_birth' => 'sometimes|nullable|date|before:today',
             'bio' => 'sometimes|nullable|string|max:1000',
@@ -1102,10 +1127,40 @@ class AuthController extends Controller
         }
 
         $updateData = $request->only([
-            'first_name', 'last_name', 'phone', 'address', 'city', 'state', 
-            'country', 'postal_code', 'date_of_birth', 'bio', 'avatar_url'
+            'first_name',
+            'last_name',
+            'phone',
+            'address',
+            'city',
+            'state',
+            'country',
+            'country_code',
+            'preferred_currency',
+            'preferred_language',
+            'timezone',
+            'postal_code',
+            'date_of_birth',
+            'bio',
+            'avatar_url'
         ]);
-        
+
+        if (!empty($updateData['country_code'])) {
+            $settingsService = app(\App\Services\PlatformSettingsService::class);
+            $localization = $settingsService->getLocalizationConfig();
+            $matchedCountry = collect($localization['countries'] ?? [])
+                ->firstWhere('code', strtoupper($updateData['country_code']));
+
+            if ($matchedCountry) {
+                $updateData['country'] = $matchedCountry['name'];
+                if (empty($updateData['preferred_currency'])) {
+                    $updateData['preferred_currency'] = $matchedCountry['currency'] ?? null;
+                }
+                if (empty($updateData['preferred_language'])) {
+                    $updateData['preferred_language'] = $matchedCountry['language'] ?? null;
+                }
+            }
+        }
+
         // Handle profile image upload
         if ($request->hasFile('profile_image')) {
             try {
@@ -1113,7 +1168,7 @@ class AuthController extends Controller
                 $filename = 'profile_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
                 $path = $image->storeAs('profiles/' . $user->id, $filename, 'public');
                 $updateData['avatar_url'] = config('app.url') . '/storage/' . $path;
-                
+
                 // Delete old profile image if exists
                 if ($user->avatar_url && !str_contains($user->avatar_url, 'default')) {
                     $oldPath = str_replace('/storage/', '', $user->avatar_url);
@@ -1129,7 +1184,7 @@ class AuthController extends Controller
                 ], 500);
             }
         }
-        
+
         // Update full name if first_name or last_name changed
         if (isset($updateData['first_name']) || isset($updateData['last_name'])) {
             $firstName = $updateData['first_name'] ?? $user->first_name;
@@ -1172,7 +1227,7 @@ class AuthController extends Controller
             $filename = 'profile_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
             $path = $image->storeAs('profiles/' . $user->id, $filename, 'public');
             $avatarUrl = config('app.url') . '/storage/' . $path;
-            
+
             // Delete old profile image if exists
             if ($user->avatar_url && !str_contains($user->avatar_url, 'default')) {
                 $oldPath = str_replace('/storage/', '', $user->avatar_url);
@@ -1180,7 +1235,7 @@ class AuthController extends Controller
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
                 }
             }
-            
+
             $user->update(['avatar_url' => $avatarUrl]);
 
             return response()->json([
@@ -1400,87 +1455,94 @@ class AuthController extends Controller
             'token' => $token,
         ], function ($message) use ($user) {
             $message->to($user->email)
-                    ->subject('Reset Your Password - BizInvestify');
+                ->subject('Reset Your Password - BizInvestify');
         });
     }
 
     /**
      * Get user's KYC application.
      */
-    public function getMyKyc(Request $request): JsonResponse
+    public function getMyKyc(Request $request, \App\Services\KycService $kycService): JsonResponse
     {
         $user = $request->user();
-        
-        $kyc = \App\Models\Kyc::where('user_id', $user->id)->first();
+        $kyc = \App\Models\Kyc::where('user_id', $user->id)->latest()->first();
 
         return response()->json([
             'success' => true,
-            'data' => $kyc
+            'data' => $kycService->formatForUser($kyc),
+            'meta' => [
+                'user_kyc_status' => $user->kyc_status,
+            ],
         ]);
     }
 
     /**
      * Submit KYC application.
      */
-    public function submitKyc(Request $request): JsonResponse
+    public function submitKyc(Request $request, \App\Services\KycService $kycService): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'document_type' => 'required|string|in:passport,national_id,drivers_license',
+            'document_type' => 'required|string|in:passport,national_id,drivers_license,voter_id',
             'document_number' => 'required|string|max:255',
-            'document_front' => 'required|file|image|max:5120',
-            'document_back' => 'required|file|image|max:5120',
-            'selfie' => 'required|file|image|max:5120',
-            'proof_of_address' => 'required|file|image|max:5120',
+            'document_front' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'document_back' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'selfie' => 'required|file|mimes:jpg,jpeg,png|max:5120',
+            'proof_of_address' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'address_line_1' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'country' => 'nullable|string|max:100',
+            'nationality' => 'nullable|string|max:100',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         $user = $request->user();
 
-        // Check if user already has a KYC application
-        $existingKyc = \App\Models\Kyc::where('user_id', $user->id)->first();
-        if ($existingKyc) {
-            return response()->json([
-                'success' => false,
-                'message' => 'KYC application already exists'
-            ], 400);
-        }
-
         try {
-            // Handle file uploads
-            $documentFrontPath = $request->file('document_front')->store('kyc/documents', 'public');
-            $documentBackPath = $request->file('document_back')->store('kyc/documents', 'public');
-            $selfiePath = $request->file('selfie')->store('kyc/selfies', 'public');
-            $proofOfAddressPath = $request->file('proof_of_address')->store('kyc/address', 'public');
-
-            $kyc = \App\Models\Kyc::create([
-                'user_id' => $user->id,
-                'document_type' => $request->document_type,
-                'document_number' => $request->document_number,
-                'document_front_path' => $documentFrontPath,
-                'document_back_path' => $documentBackPath,
-                'selfie_path' => $selfiePath,
-                'address_proof_path' => $proofOfAddressPath,
-                'status' => 'pending',
-                'submitted_at' => now(),
-            ]);
+            $kyc = $kycService->submit(
+                $user,
+                $request->only([
+                    'document_type',
+                    'document_number',
+                    'address_line_1',
+                    'city',
+                    'state',
+                    'postal_code',
+                    'country',
+                    'nationality',
+                ]),
+                [
+                    'document_front' => $request->file('document_front'),
+                    'document_back' => $request->file('document_back'),
+                    'selfie' => $request->file('selfie'),
+                    'proof_of_address' => $request->file('proof_of_address'),
+                ]
+            );
 
             return response()->json([
                 'success' => true,
                 'message' => 'KYC application submitted successfully',
-                'data' => $kyc
+                'data' => $kycService->formatForUser($kyc),
             ], 201);
-        } catch (\Exception $e) {
-            Log::error('KYC submission failed: ' . $e->getMessage());
+        } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to submit KYC application'
+                'message' => $e->getMessage(),
+            ], 400);
+        } catch (\Exception $e) {
+            Log::error('KYC submission failed: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to submit KYC application',
             ], 500);
         }
     }
@@ -1568,7 +1630,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if (!$user->hasTwoFactorEnabled()) {
+        if (!$user->requiresPerSessionTwoFactorVerification()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Two-factor authentication is not enabled for this account'
@@ -1580,9 +1642,7 @@ class AuthController extends Controller
             $valid = $google2fa->verifyKey($user->two_factor_secret, $request->code);
 
             if ($valid) {
-                // Mark 2FA as verified for this session
-                $sessionKey = '2fa_verified_' . $user->id;
-                $request->session()->put($sessionKey, true);
+                app(TwoFactorVerificationService::class)->markVerified($request, $user);
 
                 Log::info('2FA verification completed for session', [
                     'user_id' => $user->id,
@@ -1628,7 +1688,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if (!$user->hasTwoFactorEnabled()) {
+        if (!$user->requiresPerSessionTwoFactorVerification()) {
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -1637,9 +1697,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $sessionKey = '2fa_verified_' . $user->id;
-        // In stateless API contexts, a session store may not be available
-        $isVerified = $request->hasSession() ? $request->session()->has($sessionKey) : false;
+        $isVerified = app(TwoFactorVerificationService::class)->isVerifiedForRequest($request, $user);
 
         return response()->json([
             'success' => true,
@@ -1648,5 +1706,35 @@ class AuthController extends Controller
                 'user_id' => $user->id
             ]
         ]);
+    }
+
+    private function formatAuthenticatedUser(User $user): array
+    {
+        $user->loadMissing(['roles.permissions', 'permissions']);
+
+        $userPayload = $user->toArray();
+        $userPayload['roles'] = $user->roles->map(fn ($role) => [
+            'id' => $role->id,
+            'name' => $role->name,
+            'display_name' => $role->name,
+            'is_active' => true,
+            'permissions' => $role->permissions->map(fn ($permission) => [
+                'id' => $permission->id,
+                'name' => $permission->name,
+                'display_name' => $permission->name,
+                'is_active' => true,
+            ])->values(),
+        ])->values();
+        $userPayload['user_permissions'] = $user->permissions->map(fn ($permission) => [
+            'permission' => [
+                'id' => $permission->id,
+                'name' => $permission->name,
+                'display_name' => $permission->name,
+                'is_active' => true,
+            ],
+            'granted' => true,
+        ])->values();
+
+        return $userPayload;
     }
 }

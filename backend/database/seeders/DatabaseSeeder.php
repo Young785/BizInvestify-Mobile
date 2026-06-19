@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PermissionSeeder::class,
             RoleSeeder::class,
+            ProductCategorySeeder::class,
         ]);
 
         $this->command->info('✅ Permissions and roles created successfully!');
@@ -40,8 +41,6 @@ class DatabaseSeeder extends Seeder
                 'is_verified' => true,
                 'kyc_status' => 'verified',
                 'trust_score' => 5.00,
-                'two_factor_secret' => 'JBSWY3DPEHPK3PXP',
-                'two_factor_confirmed_at' => now(),
             ]
         );
 
@@ -221,6 +220,7 @@ class DatabaseSeeder extends Seeder
 
         // Run sample data seeder
         $this->call([
+            PlatformSettingsSeeder::class,
             SampleDataSeeder::class,
         ]);
 

@@ -195,8 +195,14 @@ class ProductController extends Controller
     {
         try {
             $product = Product::with(['seller'])
-                ->where('id', $id)
                 ->where('status', 'active')
+                ->where(function ($query) use ($id) {
+                    $query->where('slug', $id);
+
+                    if (ctype_digit($id)) {
+                        $query->orWhere('id', (int) $id);
+                    }
+                })
                 ->first();
 
             if (!$product) {
@@ -225,6 +231,46 @@ class ProductController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch product'
+            ], 500);
+        }
+    }
+
+    /**
+     * Display product for owner editing (any status, slug or id).
+     */
+    public function showForOwner(Request $request, string $id): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $product = Product::with(['seller'])->findBySlugOrId($id);
+
+            if (! $product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found',
+                ], 404);
+            }
+
+            if ($product->seller_id !== $user->id && ! $user->isAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You can only view your own products',
+                ], 403);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $product,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch product for owner', [
+                'product_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch product',
             ], 500);
         }
     }
@@ -266,7 +312,7 @@ class ProductController extends Controller
 
         try {
             $user = $request->user();
-            $product = Product::find($id);
+            $product = Product::findBySlugOrId($id);
 
             if (!$product) {
                 return response()->json([
@@ -345,7 +391,7 @@ class ProductController extends Controller
     {
         try {
             $user = $request->user();
-            $product = Product::find($id);
+            $product = Product::findBySlugOrId($id);
 
             if (!$product) {
                 return response()->json([
@@ -592,7 +638,7 @@ class ProductController extends Controller
     public function getRelated(Request $request, string $productId): JsonResponse
     {
         try {
-            $product = Product::find($productId);
+            $product = Product::findBySlugOrId($productId);
             
             if (!$product) {
                 return response()->json([
@@ -602,7 +648,7 @@ class ProductController extends Controller
             }
 
             $relatedProducts = Product::with(['seller'])
-                ->where('id', '!=', $productId)
+                ->where('id', '!=', $product->id)
                 ->where('status', 'active')
                 ->where(function($query) use ($product) {
                     $query->where('category', $product->category)
@@ -710,7 +756,14 @@ class ProductController extends Controller
         try {
             $product = Product::with(['seller'])
                 ->where('status', 'active')
-                ->find($id);
+                ->where(function ($query) use ($id) {
+                    $query->where('slug', $id);
+
+                    if (ctype_digit($id)) {
+                        $query->orWhere('id', (int) $id);
+                    }
+                })
+                ->first();
 
             if (!$product) {
                 return response()->json([

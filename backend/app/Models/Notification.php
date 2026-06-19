@@ -10,6 +10,11 @@ class Notification extends Model
 {
     use HasFactory;
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\NotificationFactory::new();
+    }
+
     protected $fillable = [
         'user_id',
         'type',
@@ -135,8 +140,19 @@ class Notification extends Model
     /**
      * Create notification
      */
-    public static function createNotification($userId, $type, $title, $message, $data = [], $priority = 'medium', $expiresAt = null): self
+    public static function createNotification($userId, $type, $title, $message, $data = [], $priority = 'medium', $expiresAt = null): ?self
     {
+        $user = User::find($userId);
+        $service = app(\App\Services\NotificationService::class);
+
+        if ($user && ! $service->shouldDeliverInApp($user, $type)) {
+            return null;
+        }
+
+        if (empty($data['action_url'])) {
+            $data['action_url'] = $service->defaultActionUrl($type, $data);
+        }
+
         return self::create([
             'user_id' => $userId,
             'type' => $type,
@@ -145,7 +161,7 @@ class Notification extends Model
             'data' => $data,
             'priority' => $priority,
             'expires_at' => $expiresAt,
-            'is_read' => false
+            'is_read' => false,
         ]);
     }
 
@@ -154,7 +170,7 @@ class Notification extends Model
      */
     public static function createSystemNotification($type, $title, $message, $data = [], $priority = 'medium', $expiresAt = null): void
     {
-        $users = User::where('is_active', true)->get();
+        $users = User::where('is_verified', true)->get();
         
         foreach ($users as $user) {
             self::createNotification(
@@ -175,7 +191,7 @@ class Notification extends Model
     public static function createRoleNotification($role, $type, $title, $message, $data = [], $priority = 'medium', $expiresAt = null): void
     {
         $users = User::where('role', $role)
-            ->where('is_active', true)
+            ->where('is_verified', true)
             ->get();
         
         foreach ($users as $user) {

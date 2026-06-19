@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TransactionController extends Controller
 {
@@ -27,11 +29,12 @@ class TransactionController extends Controller
             $user = Auth::user();
             $perPage = $request->get('per_page', 15);
             $status = $request->get('status');
-            $type = $request->get('type'); // 'purchase' or 'sale'
+            $type = $request->get('type');
 
             $query = Transaction::where(function ($q) use ($user) {
                 $q->where('buyer_id', $user->id)
-                  ->orWhere('seller_id', $user->id);
+                    ->orWhere('seller_id', $user->id)
+                    ->orWhere('user_id', $user->id);
             });
 
             if ($status) {
@@ -39,9 +42,19 @@ class TransactionController extends Controller
             }
 
             if ($type === 'purchase') {
-                $query->where('buyer_id', $user->id);
+                $query->where('buyer_id', $user->id)
+                    ->whereIn('type', ['purchase', 'investment']);
             } elseif ($type === 'sale') {
                 $query->where('seller_id', $user->id);
+            } elseif ($type === 'investment') {
+                $query->where('type', 'investment')
+                    ->where(function ($q) use ($user) {
+                        $q->where('buyer_id', $user->id)->orWhere('user_id', $user->id);
+                    });
+            } elseif ($type === 'refund') {
+                $query->where('type', 'refund')->where('user_id', $user->id);
+            } elseif ($type === 'withdrawal') {
+                $query->where('type', 'withdrawal')->where('user_id', $user->id);
             }
 
             $transactions = $query->with(['buyer', 'seller'])
@@ -206,12 +219,12 @@ class TransactionController extends Controller
                 'type' => 'transaction',
                 'title' => 'New Purchase Order',
                 'message' => 'You have a new purchase order for ' . $listing->title,
-                'data' => json_encode([
+                'data' => [
                     'transaction_id' => $transaction->id,
                     'buyer_name' => $user->first_name . ' ' . $user->last_name,
                     'amount' => $request->amount,
-                    'listing_title' => $listing->title
-                ]),
+                    'listing_title' => $listing->title,
+                ],
                 'priority' => 'high'
             ]);
 
@@ -220,11 +233,11 @@ class TransactionController extends Controller
                 'type' => 'transaction',
                 'title' => 'Purchase Order Created',
                 'message' => 'Your purchase order has been created and is pending confirmation',
-                'data' => json_encode([
+                'data' => [
                     'transaction_id' => $transaction->id,
                     'listing_title' => $listing->title,
-                    'amount' => $request->amount
-                ]),
+                    'amount' => $request->amount,
+                ],
                 'priority' => 'medium'
             ]);
 
@@ -235,7 +248,7 @@ class TransactionController extends Controller
                 'description' => 'Created a purchase order for ' . $listing->title,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'severity' => 'info'
+                'severity' => 'low'
             ]);
 
             ActivityLog::create([
@@ -244,7 +257,7 @@ class TransactionController extends Controller
                 'description' => 'Received a purchase order from ' . $user->first_name . ' ' . $user->last_name,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'severity' => 'info'
+                'severity' => 'low'
             ]);
 
             DB::commit();
@@ -296,10 +309,10 @@ class TransactionController extends Controller
                 'type' => 'transaction',
                 'title' => 'Purchase Order Cancelled',
                 'message' => 'A purchase order has been cancelled by the buyer',
-                'data' => json_encode([
+                'data' => [
                     'transaction_id' => $transaction->id,
-                    'buyer_name' => $user->first_name . ' ' . $user->last_name
-                ]),
+                    'buyer_name' => $user->first_name . ' ' . $user->last_name,
+                ],
                 'priority' => 'medium'
             ]);
 
@@ -310,7 +323,7 @@ class TransactionController extends Controller
                 'description' => 'Cancelled a purchase order',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'severity' => 'info'
+                'severity' => 'low'
             ]);
 
             DB::commit();
@@ -383,13 +396,38 @@ class TransactionController extends Controller
 
             $format = $request->get('format', 'csv');
             $filename = 'transactions_' . date('Y-m-d_H-i-s') . '.' . $format;
+            $disk = Storage::disk('local');
+            $path = 'exports/' . $filename;
 
-            // For now, return the data structure
-            // In a real implementation, you would generate and store the file
+            if ($format === 'json') {
+                $disk->put($path, $transactions->toJson(JSON_PRETTY_PRINT));
+            } else {
+                $handle = fopen('php://temp', 'r+');
+                fputcsv($handle, ['ID', 'Type', 'Amount', 'Status', 'Buyer', 'Seller', 'Created At']);
+
+                foreach ($transactions as $transaction) {
+                    fputcsv($handle, [
+                        $transaction->id,
+                        $transaction->listing_type ?? $transaction->type ?? 'N/A',
+                        $transaction->amount,
+                        $transaction->status,
+                        $transaction->buyer?->email ?? 'N/A',
+                        $transaction->seller?->email ?? 'N/A',
+                        $transaction->created_at,
+                    ]);
+                }
+
+                rewind($handle);
+                $disk->put($path, stream_get_contents($handle));
+                fclose($handle);
+            }
+
+            $apiBase = rtrim(config('app.url'), '/') . '/api';
+
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'download_url' => '/api/transactions/download/' . $filename,
+                    'download_url' => $apiBase . '/transactions/download/' . $filename,
                     'filename' => $filename,
                     'count' => $transactions->count(),
                     'format' => $format
@@ -401,6 +439,43 @@ class TransactionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to export transactions'
+            ], 500);
+        }
+    }
+
+    /**
+     * Download an exported transactions file.
+     */
+    public function downloadExport(string $filename): StreamedResponse|JsonResponse
+    {
+        try {
+            if (! preg_match('/^transactions_[\d\-_]+\.(csv|json|excel)$/', $filename)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid export filename',
+                ], 400);
+            }
+
+            $path = 'exports/' . $filename;
+
+            if (! Storage::disk('local')->exists($path)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Export file not found or expired',
+                ], 404);
+            }
+
+            $mimeType = str_ends_with($filename, '.json') ? 'application/json' : 'text/csv';
+
+            return Storage::disk('local')->download($path, $filename, [
+                'Content-Type' => $mimeType,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to download transaction export: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to download export',
             ], 500);
         }
     }

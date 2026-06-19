@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 use App\Models\Business;
 use App\Models\Product;
 use App\Models\Investment;
@@ -16,35 +17,50 @@ use App\Models\Kyc;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use App\Support\DatabaseDateExpressions;
 
 class AdminController extends Controller
 {
     /**
      * Get dashboard statistics
      */
-    public function getDashboardStats(): JsonResponse
+    public function getDashboardStats(Request $request, \App\Services\AdminReportService $reports): JsonResponse
     {
         try {
-            $stats = [
-                'total_users' => User::count(),
-                'active_users' => User::where('is_verified', true)->count(),
-                'pending_kyc' => User::where('kyc_status', 'pending')->count(),
-                'total_transactions' => Transaction::count(),
-                'total_revenue' => Transaction::where('status', 'completed')->sum('amount'),
-                'new_users_this_month' => User::whereMonth('created_at', now()->month)->count(),
-                'total_listings' => Business::count() + Product::count(),
-                'total_investments' => Investment::count(),
-            ];
+            $filters = $reports->filtersFromRequest($request);
+            $stats = $reports->overview($filters);
 
             return response()->json([
                 'success' => true,
-                'data' => $stats
+                'data' => $stats,
             ]);
         } catch (\Exception $e) {
             Log::error('Admin dashboard stats error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch dashboard statistics'
+                'message' => 'Failed to fetch dashboard statistics',
+            ], 500);
+        }
+    }
+
+    /**
+     * Reports overview for analytics page
+     */
+    public function getReportsOverview(Request $request, \App\Services\AdminReportService $reports): JsonResponse
+    {
+        try {
+            $filters = $reports->filtersFromRequest($request);
+
+            return response()->json([
+                'success' => true,
+                'data' => $reports->overview($filters),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Admin reports overview error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch reports overview',
             ], 500);
         }
     }
@@ -66,7 +82,8 @@ class AdminController extends Controller
                     'title' => 'New User Registration',
                     'description' => $user->first_name . ' ' . $user->last_name . ' registered as a ' . $user->role,
                     'timestamp' => $user->created_at->diffForHumans(),
-                    'user' => $user->first_name . ' ' . $user->last_name
+                    'sort_at' => $user->created_at->timestamp,
+                    'user' => $user->first_name . ' ' . $user->last_name,
                 ];
             }
 
@@ -84,7 +101,8 @@ class AdminController extends Controller
                     'title' => 'KYC Approved',
                     'description' => $user->first_name . ' ' . $user->last_name . '\'s KYC documents approved',
                     'timestamp' => $user->kyc_verified_at->diffForHumans(),
-                    'user' => $user->first_name . ' ' . $user->last_name
+                    'sort_at' => $user->kyc_verified_at->timestamp,
+                    'user' => $user->first_name . ' ' . $user->last_name,
                 ];
             }
 
@@ -97,14 +115,12 @@ class AdminController extends Controller
                     'title' => 'New Transaction',
                     'description' => 'Transaction completed for $' . number_format($transaction->amount, 2),
                     'timestamp' => $transaction->created_at->diffForHumans(),
-                    'amount' => $transaction->amount
+                    'sort_at' => $transaction->created_at->timestamp,
+                    'amount' => $transaction->amount,
                 ];
             }
 
-            // Sort by timestamp
-            usort($activities, function($a, $b) {
-                return strtotime($b['timestamp']) - strtotime($a['timestamp']);
-            });
+            usort($activities, fn ($a, $b) => ($b['sort_at'] ?? 0) <=> ($a['sort_at'] ?? 0));
 
             return response()->json([
                 'success' => true,
@@ -183,7 +199,7 @@ class AdminController extends Controller
                 'last_name' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email',
                 'phone' => 'nullable|string|max:20',
-                'role' => 'required|in:buyer,seller,admin',
+                'role' => 'required|in:buyer,seller,admin,super_admin,investor,moderator,support',
                 'password' => 'required|string|min:8',
                 'is_verified' => 'boolean',
                 'kyc_status' => 'in:pending,verified,rejected',
@@ -191,6 +207,11 @@ class AdminController extends Controller
                 'business_type' => 'nullable|string|max:255',
                 'investment_amount' => 'nullable|string|max:255',
                 'investment_focus' => 'nullable|string|max:255',
+                'country' => 'nullable|string|max:255',
+                'country_code' => 'nullable|string|size:2',
+                'preferred_currency' => 'nullable|string|size:3',
+                'preferred_language' => 'nullable|string|max:5',
+                'timezone' => 'nullable|string|max:64',
             ]);
 
             // Hash the password
@@ -205,6 +226,11 @@ class AdminController extends Controller
             $validated['name'] = $validated['first_name'] . ' ' . $validated['last_name'];
 
             $user = User::create($validated);
+
+            $role = Role::where('name', $validated['role'])->first();
+            if ($role) {
+                $user->assignRole($role);
+            }
 
             Log::info('Admin created user: ' . $user->email);
 
@@ -259,11 +285,24 @@ class AdminController extends Controller
                 'first_name' => 'sometimes|string|max:255',
                 'last_name' => 'sometimes|string|max:255',
                 'email' => 'sometimes|email|unique:users,email,' . $user->id,
-                'phone' => 'sometimes|string|max:20',
-                'role' => 'sometimes|in:seller,buyer,admin',
+                'phone' => 'sometimes|nullable|string|max:20',
+                'role' => 'sometimes|in:seller,buyer,admin,super_admin,investor,moderator,support',
                 'is_verified' => 'sometimes|boolean',
-                'kyc_status' => 'sometimes|in:pending,verified,rejected'
+                'kyc_status' => 'sometimes|in:pending,verified,rejected',
+                'country' => 'sometimes|nullable|string|max:255',
+                'country_code' => 'sometimes|nullable|string|size:2',
+                'preferred_currency' => 'sometimes|nullable|string|size:3',
+                'preferred_language' => 'sometimes|nullable|string|max:5',
+                'timezone' => 'sometimes|nullable|string|max:64',
             ]);
+
+            if (isset($validated['role'])) {
+                $role = Role::where('name', $validated['role'])->first();
+                if ($role) {
+                    $user->syncRoles([$role]);
+                }
+                unset($validated['role']);
+            }
 
             $user->update($validated);
 
@@ -390,163 +429,184 @@ class AdminController extends Controller
     /**
      * Get KYC applications
      */
-    public function getKYCApplications(Request $request): JsonResponse
+    public function getKYCApplications(Request $request, \App\Services\KycService $kycService): JsonResponse
     {
         try {
             $query = \App\Models\Kyc::with('user');
 
-            // Status filter
             if ($request->has('status') && $request->get('status') !== 'all') {
                 $query->where('status', $request->get('status'));
             }
 
-            // Search filter
-            if ($request->has('search')) {
+            if ($request->filled('search')) {
                 $search = $request->get('search');
-                $query->whereHas('user', function($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->where('document_number', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($userQuery) use ($search) {
+                            $userQuery->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
                 });
             }
 
-            $applications = $query->orderBy('created_at', 'desc')
-                ->paginate($request->get('per_page', 15));
+            $applications = $query->orderByDesc('submitted_at')
+                ->orderByDesc('created_at')
+                ->paginate($request->integer('per_page', 15));
+
+            $applications->setCollection(
+                $applications->getCollection()->map(fn ($kyc) => $kycService->formatForAdminList($kyc))
+            );
 
             return response()->json([
                 'success' => true,
-                'data' => $applications
+                'data' => $applications,
+                'meta' => [
+                    'pending_count' => \App\Models\Kyc::where('status', 'pending')->count(),
+                ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Admin get KYC applications error: ' . $e->getMessage());
+            Log::error('Admin get KYC applications error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch KYC applications'
+                'message' => 'Failed to fetch KYC applications',
             ], 500);
         }
     }
 
-    /**
-     * Get specific KYC application
-     */
-    public function getKYCApplication($id): JsonResponse
+    public function getKYCApplication($id, \App\Services\KycService $kycService): JsonResponse
     {
         try {
             $kyc = \App\Models\Kyc::with('user')->find($id);
-            
-            if (!$kyc) {
+
+            if (! $kyc) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No KYC application found'
+                    'message' => 'No KYC application found',
                 ], 404);
             }
 
             return response()->json([
                 'success' => true,
-                'data' => $kyc
+                'data' => $kycService->formatForAdmin($kyc),
             ]);
         } catch (\Exception $e) {
-            Log::error('Admin get KYC application error: ' . $e->getMessage());
+            Log::error('Admin get KYC application error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch KYC application'
+                'message' => 'Failed to fetch KYC application',
             ], 500);
         }
     }
 
-    /**
-     * Approve KYC application
-     */
-    public function approveKYC($id): JsonResponse
+    public function approveKYC($id, \App\Services\KycService $kycService): JsonResponse
     {
         try {
-            $kyc = \App\Models\Kyc::find($id);
-            
-            if (!$kyc) {
+            $kyc = \App\Models\Kyc::with('user')->find($id);
+
+            if (! $kyc) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'KYC application not found'
+                    'message' => 'KYC application not found',
                 ], 404);
             }
 
-            $kyc->approve(auth()->user());
+            if (! $kyc->approve(auth()->user())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only pending applications can be approved',
+                ], 422);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'KYC application approved successfully'
+                'message' => 'KYC application approved successfully',
+                'data' => $kycService->formatForAdmin($kyc->fresh(['user'])),
             ]);
         } catch (\Exception $e) {
-            Log::error('Admin approve KYC error: ' . $e->getMessage());
+            Log::error('Admin approve KYC error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to approve KYC application'
+                'message' => 'Failed to approve KYC application',
             ], 500);
         }
     }
 
-    /**
-     * Reject KYC application
-     */
-    public function rejectKYC(Request $request, $id): JsonResponse
+    public function rejectKYC(Request $request, $id, \App\Services\KycService $kycService): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'reason' => 'required|string|max:500'
+                'reason' => 'required|string|max:500',
             ]);
 
-            $kyc = \App\Models\Kyc::find($id);
-            
-            if (!$kyc) {
+            $kyc = \App\Models\Kyc::with('user')->find($id);
+
+            if (! $kyc) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'KYC application not found'
+                    'message' => 'KYC application not found',
                 ], 404);
             }
 
-            $kyc->reject(auth()->user(), $validated['reason']);
+            if (! $kyc->reject(auth()->user(), $validated['reason'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only pending applications can be rejected',
+                ], 422);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'KYC application rejected successfully'
+                'message' => 'KYC application rejected successfully',
+                'data' => $kycService->formatForAdmin($kyc->fresh(['user'])),
             ]);
         } catch (\Exception $e) {
-            Log::error('Admin reject KYC error: ' . $e->getMessage());
+            Log::error('Admin reject KYC error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to reject KYC application'
+                'message' => 'Failed to reject KYC application',
             ], 500);
         }
     }
 
-    /**
-     * Get KYC document
-     */
-    public function getKYCDocument(Request $request): JsonResponse
+    public function getKYCDocument(Request $request, \App\Services\KycService $kycService, $document = null): JsonResponse
     {
         try {
-            $documentPath = $request->get('path');
-            
-            if (!Storage::exists($documentPath)) {
+            $documentPath = $request->get('path') ?? ($document ? urldecode($document) : null);
+
+            if (! $documentPath) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Document not found'
-                ], 404);
+                    'message' => 'Document path is required',
+                ], 422);
             }
 
-            $url = Storage::url($documentPath);
+            $url = $kycService->getDocumentUrl($documentPath);
+
+            if (! $url) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Document not found',
+                ], 404);
+            }
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'url' => $url,
-                    'path' => $documentPath
-                ]
+                    'path' => $documentPath,
+                ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Admin get KYC document error: ' . $e->getMessage());
+            Log::error('Admin get KYC document error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch document'
+                'message' => 'Failed to fetch document',
             ], 500);
         }
     }
@@ -640,34 +700,18 @@ class AdminController extends Controller
     /**
      * Get user report
      */
-    public function getUserReport(Request $request): JsonResponse
+    public function getUserReport(Request $request, \App\Services\AdminReportService $reports): JsonResponse
     {
         try {
-            $report = [
-                'total_users' => User::count(),
-                            'active_users' => User::where('is_verified', true)->count(),
-            'suspended_users' => User::where('is_verified', false)->count(),
-                'users_by_role' => User::select('role', DB::raw('count(*) as count'))
-                    ->groupBy('role')
-                    ->get(),
-                'users_by_kyc_status' => User::select('kyc_status', DB::raw('count(*) as count'))
-                    ->groupBy('kyc_status')
-                    ->get(),
-                'new_users_by_month' => User::select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'), DB::raw('count(*) as count'))
-                    ->groupBy('month')
-                    ->orderBy('month')
-                    ->get()
-            ];
-
             return response()->json([
                 'success' => true,
-                'data' => $report
+                'data' => $reports->userReport($reports->filtersFromRequest($request)),
             ]);
         } catch (\Exception $e) {
             Log::error('Admin user report error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate user report'
+                'message' => 'Failed to generate user report',
             ], 500);
         }
     }
@@ -675,32 +719,18 @@ class AdminController extends Controller
     /**
      * Get transaction report
      */
-    public function getTransactionReport(Request $request): JsonResponse
+    public function getTransactionReport(Request $request, \App\Services\AdminReportService $reports): JsonResponse
     {
         try {
-            $report = [
-                'total_transactions' => Transaction::count(),
-                'total_amount' => Transaction::sum('amount'),
-                'completed_transactions' => Transaction::where('status', 'completed')->count(),
-                'completed_amount' => Transaction::where('status', 'completed')->sum('amount'),
-                'transactions_by_status' => Transaction::select('status', DB::raw('count(*) as count'))
-                    ->groupBy('status')
-                    ->get(),
-                'transactions_by_month' => Transaction::select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'), DB::raw('count(*) as count'), DB::raw('sum(amount) as total_amount'))
-                    ->groupBy('month')
-                    ->orderBy('month')
-                    ->get()
-            ];
-
             return response()->json([
                 'success' => true,
-                'data' => $report
+                'data' => $reports->transactionReport($reports->filtersFromRequest($request)),
             ]);
         } catch (\Exception $e) {
             Log::error('Admin transaction report error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate transaction report'
+                'message' => 'Failed to generate transaction report',
             ], 500);
         }
     }
@@ -708,33 +738,18 @@ class AdminController extends Controller
     /**
      * Get revenue report
      */
-    public function getRevenueReport(Request $request): JsonResponse
+    public function getRevenueReport(Request $request, \App\Services\AdminReportService $reports): JsonResponse
     {
         try {
-            $report = [
-                'total_revenue' => Transaction::where('status', 'completed')->sum('amount'),
-                'monthly_revenue' => Transaction::where('status', 'completed')
-                    ->whereMonth('created_at', now()->month)
-                    ->sum('amount'),
-                'yearly_revenue' => Transaction::where('status', 'completed')
-                    ->whereYear('created_at', now()->year)
-                    ->sum('amount'),
-                'revenue_by_month' => Transaction::where('status', 'completed')
-                    ->select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'), DB::raw('sum(amount) as revenue'))
-                    ->groupBy('month')
-                    ->orderBy('month')
-                    ->get()
-            ];
-
             return response()->json([
                 'success' => true,
-                'data' => $report
+                'data' => $reports->revenueReport($reports->filtersFromRequest($request)),
             ]);
         } catch (\Exception $e) {
             Log::error('Admin revenue report error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate revenue report'
+                'message' => 'Failed to generate revenue report',
             ], 500);
         }
     }
@@ -742,30 +757,18 @@ class AdminController extends Controller
     /**
      * Get KYC report
      */
-    public function getKYCReport(Request $request): JsonResponse
+    public function getKYCReport(Request $request, \App\Services\AdminReportService $reports): JsonResponse
     {
         try {
-            $report = [
-                'total_applications' => User::whereNotNull('kyc_documents')->count(),
-                'pending_applications' => User::where('kyc_status', 'pending')->count(),
-                'approved_applications' => User::where('kyc_status', 'verified')->count(),
-                'rejected_applications' => User::where('kyc_status', 'rejected')->count(),
-                'kyc_by_month' => User::whereNotNull('kyc_documents')
-                    ->select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'), DB::raw('count(*) as count'))
-                    ->groupBy('month')
-                    ->orderBy('month')
-                    ->get()
-            ];
-
             return response()->json([
                 'success' => true,
-                'data' => $report
+                'data' => $reports->kycReport($reports->filtersFromRequest($request)),
             ]);
         } catch (\Exception $e) {
             Log::error('Admin KYC report error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate KYC report'
+                'message' => 'Failed to generate KYC report',
             ], 500);
         }
     }
@@ -873,27 +876,37 @@ class AdminController extends Controller
     /**
      * Export report
      */
-    public function exportReport(Request $request): JsonResponse
+    public function exportReport(Request $request, \App\Services\AdminReportService $reports): JsonResponse
     {
         try {
-            $type = $request->get('type');
-            $format = $request->get('format', 'csv');
+            $validated = $request->validate([
+                'type' => 'required|in:user,transaction,revenue,kyc',
+                'format' => 'nullable|in:csv',
+                'period' => 'nullable|in:daily,weekly,monthly,yearly',
+                'date_from' => 'nullable|date',
+                'date_to' => 'nullable|date|after_or_equal:date_from',
+            ]);
 
-            // Implementation for report export
-            // This would generate and return the file
+            $type = $validated['type'];
+            $format = $validated['format'] ?? 'csv';
+            $filters = $reports->filtersFromRequest($request);
+            $export = $reports->export($type, $format, $filters);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Report exported successfully',
-                'data' => [
-                    'download_url' => '/api/admin/reports/download/' . $type . '.' . $format
-                ]
+                'data' => $export,
             ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
         } catch (\Exception $e) {
             Log::error('Admin export report error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to export report'
+                'message' => 'Failed to export report',
             ], 500);
         }
     }
@@ -904,35 +917,16 @@ class AdminController extends Controller
     public function getSettings(): JsonResponse
     {
         try {
-            // Mock settings - in real app, these would come from database
-            $settings = [
-                'site_name' => 'BizInvestify',
-                'site_description' => 'Your trusted marketplace for products, businesses, and investments',
-                'site_url' => 'https://bizinvestify.com',
-                'contact_email' => 'contact@bizinvestify.com',
-                'support_email' => 'support@bizinvestify.com',
-                'currency' => 'USD',
-                'commission_rate' => 5.0,
-                'minimum_withdrawal' => 50.0,
-                'payment_methods' => ['stripe', 'paypal'],
-                'max_login_attempts' => 5,
-                'session_timeout' => 60,
-                'require_2fa' => false,
-                'require_kyc' => true,
-                'smtp_host' => '',
-                'smtp_port' => 587,
-                'smtp_username' => '',
-                'smtp_password' => '',
-                'email_from_name' => 'BizInvestify',
-                'email_from_address' => 'noreply@bizinvestify.com',
-                'email_notifications' => true,
-                'push_notifications' => true,
-                'admin_notifications' => true,
-                'maintenance_mode' => false,
-                'debug_mode' => false,
-                'log_level' => 'info',
-                'cache_duration' => 3600
-            ];
+            $settingsService = app(\App\Services\PlatformSettingsService::class);
+
+            $settings = array_merge(
+                $settingsService->getPlatformSettings(),
+                [
+                    'pricing_plans' => $settingsService->getPricingPlans(),
+                    'localization' => $settingsService->getLocalizationConfig(),
+                    'payment_gateways' => app(\App\Services\PaymentGatewayService::class)->getConfigForAdmin(),
+                ]
+            );
 
             return response()->json([
                 'success' => true,
@@ -956,44 +950,157 @@ class AdminController extends Controller
             $validated = $request->validate([
                 'site_name' => 'sometimes|string|max:255',
                 'site_description' => 'sometimes|string',
-                'site_url' => 'sometimes|url',
-                'contact_email' => 'sometimes|email',
-                'support_email' => 'sometimes|email',
+                'site_url' => 'sometimes|nullable|url',
+                'contact_email' => 'sometimes|nullable|email',
+                'support_email' => 'sometimes|nullable|email',
                 'currency' => 'sometimes|string|max:3',
                 'commission_rate' => 'sometimes|numeric|min:0|max:100',
+                'investment_fee_rate' => 'sometimes|numeric|min:0|max:100',
+                'featured_listing_min_daily_budget' => 'sometimes|numeric|min:1',
+                'featured_listing_approval_required' => 'sometimes|boolean',
                 'minimum_withdrawal' => 'sometimes|numeric|min:0',
                 'payment_methods' => 'sometimes|array',
                 'max_login_attempts' => 'sometimes|integer|min:1|max:10',
                 'session_timeout' => 'sometimes|integer|min:15|max:480',
                 'require_2fa' => 'sometimes|boolean',
                 'require_kyc' => 'sometimes|boolean',
-                'smtp_host' => 'sometimes|string',
-                'smtp_port' => 'sometimes|integer|min:1|max:65535',
-                'smtp_username' => 'sometimes|string',
-                'smtp_password' => 'sometimes|string',
-                'email_from_name' => 'sometimes|string',
-                'email_from_address' => 'sometimes|email',
+                'smtp_host' => 'sometimes|nullable|string|max:255',
+                'smtp_port' => 'sometimes|nullable|integer|min:1|max:65535',
+                'smtp_username' => 'sometimes|nullable|string|max:255',
+                'smtp_password' => 'sometimes|nullable|string|max:255',
+                'email_from_name' => 'sometimes|nullable|string|max:255',
+                'email_from_address' => 'sometimes|nullable|email',
                 'email_notifications' => 'sometimes|boolean',
                 'push_notifications' => 'sometimes|boolean',
                 'admin_notifications' => 'sometimes|boolean',
                 'maintenance_mode' => 'sometimes|boolean',
                 'debug_mode' => 'sometimes|boolean',
                 'log_level' => 'sometimes|in:debug,info,warning,error',
-                'cache_duration' => 'sometimes|integer|min:60|max:86400'
+                'cache_duration' => 'sometimes|integer|min:60|max:86400',
+                'pricing_plans' => 'sometimes|array',
+                'localization' => 'sometimes|array',
+                'payment_gateways' => 'sometimes|array',
             ]);
 
-            // In a real app, save to database
-            // For now, just return success
+            $settingsService = app(\App\Services\PlatformSettingsService::class);
+            $platformKeys = [
+                'site_name', 'site_description', 'site_url', 'contact_email', 'support_email',
+                'currency', 'commission_rate', 'investment_fee_rate', 'featured_listing_min_daily_budget',
+                'featured_listing_approval_required', 'minimum_withdrawal', 'payment_methods',
+                'max_login_attempts', 'session_timeout', 'require_2fa', 'require_kyc',
+                'smtp_host', 'smtp_port', 'smtp_username', 'smtp_password',
+                'email_from_name', 'email_from_address', 'email_notifications',
+                'push_notifications', 'admin_notifications', 'maintenance_mode',
+                'debug_mode', 'log_level', 'cache_duration',
+            ];
+
+            $platformSettings = array_merge(
+                $settingsService->getPlatformSettings(),
+                array_intersect_key($validated, array_flip($platformKeys))
+            );
+            $settingsService->savePlatformSettings($platformSettings);
+
+            if (isset($validated['pricing_plans'])) {
+                $settingsService->savePricingPlans($validated['pricing_plans']);
+            }
+
+            if (isset($validated['localization'])) {
+                $settingsService->saveLocalizationConfig($validated['localization']);
+            }
+
+            if (isset($validated['payment_gateways'])) {
+                app(\App\Services\PaymentGatewayService::class)->saveConfig($validated['payment_gateways']);
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Settings updated successfully'
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Admin update settings error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update settings'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get payment gateway configuration (admin).
+     */
+    public function getPaymentGateways(): JsonResponse
+    {
+        try {
+            $service = app(\App\Services\PaymentGatewayService::class);
+
+            return response()->json([
+                'success' => true,
+                'data' => $service->getConfigForAdmin(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Admin get payment gateways error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch payment gateways',
+            ], 500);
+        }
+    }
+
+    /**
+     * Update payment gateway configuration (admin).
+     */
+    public function updatePaymentGateways(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'default_gateway' => 'sometimes|string|in:stripe,paystack,flutterwave,razorpay,paypal,bank_transfer',
+                'gateways' => 'sometimes|array',
+            ]);
+
+            $service = app(\App\Services\PaymentGatewayService::class);
+            $service->saveConfig($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment gateways updated successfully',
+                'data' => $service->getConfigForAdmin(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Admin update payment gateways error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update payment gateways',
+            ], 500);
+        }
+    }
+
+    /**
+     * Test payment gateway connection (admin).
+     */
+    public function testPaymentGateway(string $gateway): JsonResponse
+    {
+        try {
+            $service = app(\App\Services\PaymentGatewayService::class);
+            $result = $service->testConnection($gateway);
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+            ], $result['success'] ? 200 : 400);
+        } catch (\Exception $e) {
+            Log::error('Admin test payment gateway error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gateway test failed',
             ], 500);
         }
     }

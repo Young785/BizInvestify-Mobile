@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\InvestmentController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\NotificationPreferencesController;
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\RoleController;
@@ -25,6 +26,13 @@ use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PlatformController;
+use App\Http\Controllers\Api\NewsletterController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\RealtimeController;
+use App\Http\Controllers\Api\CurrencyController;
+use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\AdminWithdrawalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,7 +46,7 @@ use App\Http\Controllers\Api\OrderController;
 */
 
 // Public authentication routes with rate limiting
-Route::middleware(['rate_limit:auth,5,1'])->group(function () {
+Route::middleware(['rate_limit:auth,10,1'])->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
@@ -50,7 +58,7 @@ Route::middleware(['rate_limit:password_reset,3,5'])->group(function () {
 });
 
 // Email verification routes (public) with rate limiting
-Route::middleware(['rate_limit:email_verify,10,1'])->group(function () {
+Route::middleware(['rate_limit:email_verify,20,1'])->group(function () {
     Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
     Route::post('/check-email-verification-status', [AuthController::class, 'checkEmailVerificationStatus']);
     Route::post('/resend-email-verification', [AuthController::class, 'resendEmailVerification']);
@@ -59,7 +67,7 @@ Route::middleware(['rate_limit:email_verify,10,1'])->group(function () {
 });
 
 // Phone verification routes (public) with rate limiting
-Route::middleware(['rate_limit:phone_verify,10,1'])->group(function () {
+Route::middleware(['rate_limit:phone_verify,20,1'])->group(function () {
     Route::post('/send-phone-verification', [AuthController::class, 'sendPhoneVerification']);
     Route::post('/verify-phone', [AuthController::class, 'verifyPhone']);
 });
@@ -70,7 +78,7 @@ Route::middleware(['rate_limit:contact,3,5'])->group(function () {
 });
 
 // Public marketplace routes (no authentication required)
-Route::middleware(['rate_limit:public_api,100,1'])->group(function () {
+Route::middleware(['rate_limit:public_api,200,1'])->group(function () {
     Route::get('/public/products', [ProductController::class, 'publicIndex']);
     Route::get('/public/businesses', [BusinessController::class, 'publicIndex']);
     Route::get('/public/products/{product}', [ProductController::class, 'publicShow']);
@@ -81,10 +89,28 @@ Route::middleware(['rate_limit:public_api,100,1'])->group(function () {
     Route::get('/public/search', [SearchController::class, 'publicSearch']);
     Route::get('/public/marketplace/stats', [MarketplaceController::class, 'getPublicStats']);
     Route::get('/public/marketplace/recommendations', [MarketplaceController::class, 'getPublicRecommendations']);
+    Route::get('/public/platform/config', [PlatformController::class, 'getPublicConfig']);
+    Route::get('/public/pricing', [PlatformController::class, 'getPublicPricing']);
+    Route::get('/public/currencies', [CurrencyController::class, 'getSupportedCurrencies']);
+    Route::get('/public/currency/rate', [CurrencyController::class, 'getRate']);
+    Route::post('/public/currency/convert', [CurrencyController::class, 'convert']);
+    Route::get('/public/payment-gateways', [PlatformController::class, 'getPublicPaymentGateways']);
+    Route::post('/public/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
+    Route::post('/public/newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe']);
+    Route::get('/public/orders/{orderNumber}/tracking', [OrderController::class, 'tracking']);
 });
 
+// Payment provider redirect callbacks (no auth)
+Route::get('/payments/paystack/callback', [PaymentController::class, 'paystackCallback']);
+Route::get('/payments/flutterwave/callback', [PaymentController::class, 'flutterwaveCallback']);
+
+// Payment webhooks (no authentication — called by providers)
+Route::post('/webhooks/stripe', [PaymentController::class, 'handleWebhook']);
+Route::post('/webhooks/paystack', [PaymentController::class, 'handlePaystackWebhook']);
+Route::post('/webhooks/flutterwave', [PaymentController::class, 'handleFlutterwaveWebhook']);
+
 // Payment routes (require authentication)
-Route::middleware(['auth:sanctum', 'rate_limit:api,60,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'rate_limit:api,120,1'])->group(function () {
     Route::post('/payments/create-intent', [PaymentController::class, 'createPaymentIntent']);
     Route::post('/payments/bank-transfer', [PaymentController::class, 'processBankTransfer']);
     Route::post('/payments/crypto', [PaymentController::class, 'processCryptoPayment']);
@@ -93,12 +119,11 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1'])->group(function () {
     Route::get('/payments/transactions', [PaymentController::class, 'getTransactionHistory']);
     Route::get('/payments/status/{paymentIntentId}', [PaymentController::class, 'getPaymentStatus']);
     Route::post('/payments/cancel', [PaymentController::class, 'cancelPayment']);
-    Route::post('/payments/refund', [PaymentController::class, 'refundPayment']);
     Route::get('/payments/analytics', [PaymentController::class, 'getPaymentAnalytics']);
 });
 
 // Chat routes (require authentication)
-Route::middleware(['auth:sanctum', 'rate_limit:chat,30,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'rate_limit:chat,60,1'])->group(function () {
     Route::get('/chat/rooms', [ChatController::class, 'getRooms']);
     Route::post('/chat/rooms', [ChatController::class, 'createRoom']);
     Route::get('/chat/rooms/{room}/messages', [ChatController::class, 'getMessages']);
@@ -110,12 +135,14 @@ Route::middleware(['auth:sanctum', 'rate_limit:chat,30,1'])->group(function () {
 });
 
 // Protected routes (require authentication)
-Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\TwoFactorMiddleware::class])->group(function () {
+Route::middleware(['auth:sanctum', 'rate_limit:api,120,1', \App\Http\Middleware\TwoFactorMiddleware::class])->group(function () {
     // Auth routes
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/profile', [AuthController::class, 'me']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::get('/user/notification-settings', [NotificationPreferencesController::class, 'show']);
+    Route::put('/user/notification-settings', [NotificationPreferencesController::class, 'update']);
     Route::post('/profile/upload-image', [AuthController::class, 'uploadProfileImage']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::get('/stats', [AuthController::class, 'getStats']);
@@ -129,7 +156,7 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
     });
 
     // Two-factor authentication routes (more restrictive rate limiting)
-    Route::middleware(['rate_limit:2fa,10,1'])->group(function () {
+    Route::middleware(['rate_limit:2fa,30,1'])->group(function () {
         Route::post('/setup-2fa', [AuthController::class, 'setup2FA']);
         Route::post('/confirm-2fa', [AuthController::class, 'confirm2FA']);
         Route::post('/setup-email-2fa', [AuthController::class, 'setupEmail2FA']);
@@ -137,7 +164,7 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
         Route::post('/skip-2fa', [AuthController::class, 'skip2FA']);
         Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
         Route::post('/disable-2fa', [AuthController::class, 'disable2FA']);
-        
+
         // Session-based 2FA verification routes
         Route::post('/verify-2fa-session', [AuthController::class, 'verify2FAForSession']);
         Route::get('/check-2fa-status', [AuthController::class, 'check2FAVerificationStatus']);
@@ -147,9 +174,10 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
     Route::get('/products', [ProductController::class, 'index']); // Public viewing
     Route::get('/products/user', [ProductController::class, 'getUserProducts']);
     Route::get('/products/trending', [ProductController::class, 'getTrending']);
+    Route::get('/products/{product}/manage', [ProductController::class, 'showForOwner']);
     Route::get('/products/{product}', [ProductController::class, 'show']);
     Route::get('/products/{product}/related', [ProductController::class, 'getRelated']);
-    
+
     // Product management (requires permissions)
     Route::middleware('permission:products.create')->group(function () {
         Route::post('/products', [ProductController::class, 'store']);
@@ -161,14 +189,28 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
         Route::delete('/products/{product}', [ProductController::class, 'destroy']);
     });
 
+    // Product category routes (slug-based identifiers)
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/categories/{category}', [CategoryController::class, 'show']);
+    Route::middleware('permission:products.create')->group(function () {
+        Route::post('/categories', [CategoryController::class, 'store']);
+    });
+    Route::middleware('permission:products.edit')->group(function () {
+        Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    });
+    Route::middleware('permission:products.delete')->group(function () {
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+    });
+
     // Businesses routes with permissions
     Route::get('/businesses', [BusinessController::class, 'index']); // Public viewing
     Route::get('/businesses/user', [BusinessController::class, 'getUserBusinesses']);
     Route::get('/businesses/featured', [BusinessController::class, 'getFeatured']);
     Route::get('/businesses/trending', [BusinessController::class, 'getTrending']);
+    Route::get('/businesses/{business}/manage', [BusinessController::class, 'showForOwner']);
     Route::get('/businesses/{business}', [BusinessController::class, 'show']);
     Route::get('/businesses/{business}/related', [BusinessController::class, 'getRelated']);
-    
+
     // Business management (requires permissions)
     Route::middleware('permission:businesses.create')->group(function () {
         Route::post('/businesses', [BusinessController::class, 'store']);
@@ -208,34 +250,60 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
         Route::put('/transactions/{transaction}/cancel', [TransactionController::class, 'cancelTransaction']);
     });
     Route::post('/transactions/export', [TransactionController::class, 'exportTransactions']);
+    Route::get('/transactions/download/{filename}', [TransactionController::class, 'downloadExport']);
 
     // Payment routes
     Route::middleware('permission:payments.create')->group(function () {
         Route::post('/payments/product-intent', [PaymentController::class, 'createProductPaymentIntent']);
         Route::post('/payments/investment-intent', [PaymentController::class, 'createInvestmentPaymentIntent']);
         Route::post('/payments/confirm', [PaymentController::class, 'confirmPayment']);
-        
+
         // Paystack payment routes
         Route::post('/payments/paystack/product', [PaymentController::class, 'createPaystackProductPayment']);
         Route::post('/payments/paystack/investment', [PaymentController::class, 'createPaystackInvestmentPayment']);
         Route::post('/payments/paystack/verify', [PaymentController::class, 'verifyPaystackPayment']);
-        
+
+        // Flutterwave payment routes
+        Route::post('/payments/flutterwave/product', [PaymentController::class, 'createFlutterwaveProductPayment']);
+        Route::post('/payments/flutterwave/investment', [PaymentController::class, 'createFlutterwaveInvestmentPayment']);
+        Route::post('/payments/flutterwave/verify', [PaymentController::class, 'verifyFlutterwavePayment']);
+
+        Route::get('/payments/available-gateways', [PaymentController::class, 'getAvailableGateways']);
+
         // Escrow routes
+        Route::post('/payments/subscription-intent', [PaymentController::class, 'createSubscriptionPaymentIntent']);
+        Route::post('/payments/featured-listing-intent', [PaymentController::class, 'createFeaturedListingPaymentIntent']);
         Route::post('/payments/escrow/create', [PaymentController::class, 'createEscrowTransaction']);
-        Route::post('/payments/escrow/release', [PaymentController::class, 'releaseEscrowFunds']);
+        Route::post('/payments/escrow', [PaymentController::class, 'createEscrowTransaction']);
+        Route::get('/payments/escrow', [PaymentController::class, 'listEscrowTransactions']);
         Route::get('/payments/escrow/{escrow_id}', [PaymentController::class, 'getEscrowTransaction']);
+        Route::patch('/payments/escrow/{escrow_id}/conditions', [PaymentController::class, 'updateEscrowConditions']);
+        Route::post('/payments/escrow/release', [PaymentController::class, 'releaseEscrowFunds']);
     });
     Route::middleware('permission:payments.refund')->group(function () {
         Route::post('/payments/refund', [PaymentController::class, 'processRefund']);
     });
     Route::get('/payments/wallet-balance', [PaymentController::class, 'getWalletBalance']);
     Route::get('/payments/transaction-history', [PaymentController::class, 'getTransactionHistory']);
+
+    // Wallet, bank accounts & withdrawals
+    Route::get('/wallet/summary', [WalletController::class, 'summary']);
+    Route::get('/wallet/bank-accounts', [WalletController::class, 'listBankAccounts']);
+    Route::post('/wallet/bank-accounts', [WalletController::class, 'storeBankAccount']);
+    Route::put('/wallet/bank-accounts/{id}', [WalletController::class, 'updateBankAccount']);
+    Route::delete('/wallet/bank-accounts/{id}', [WalletController::class, 'destroyBankAccount']);
+    Route::post('/wallet/bank-accounts/{id}/default', [WalletController::class, 'setDefaultBankAccount']);
+    Route::get('/wallet/withdrawals', [WalletController::class, 'listWithdrawals']);
+    Route::post('/wallet/withdrawals', [WalletController::class, 'requestWithdrawal']);
+    Route::post('/wallet/withdrawals/{id}/cancel', [WalletController::class, 'cancelWithdrawal']);
     Route::post('/payments/stripe-account', [PaymentController::class, 'createStripeAccount']);
     Route::get('/payments/stripe-account-status', [PaymentController::class, 'getStripeAccountStatus']);
-    
-    // Webhook routes (no authentication required)
-    Route::post('/webhooks/stripe', [PaymentController::class, 'handleWebhook']);
-    Route::post('/webhooks/paystack', [PaymentController::class, 'handlePaystackWebhook']);
+    Route::get('/payments/stripe-connect/status', [PaymentController::class, 'getStripeConnectStatus']);
+    Route::post('/payments/stripe-connect/onboarding', [PaymentController::class, 'startStripeConnectOnboarding']);
+    Route::post('/payments/stripe-connect/dashboard', [PaymentController::class, 'getStripeConnectDashboard']);
+
+    // Realtime event polling (notifications, messages)
+    Route::get('/realtime/poll', [RealtimeController::class, 'poll']);
 
     // Search routes
     Route::get('/search/products', [SearchController::class, 'searchProducts']);
@@ -265,6 +333,8 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
     Route::get('/reviews/my-reviews', [ReviewController::class, 'myReviews']);
 
     // Support routes
+    Route::get('/support/chat/session', [SupportController::class, 'getChatSession']);
+    Route::post('/support/chat/messages', [SupportController::class, 'sendChatMessage']);
     Route::get('/support/tickets', [SupportController::class, 'index']);
     Route::post('/support/tickets', [SupportController::class, 'store']);
     Route::get('/support/tickets/{ticket}', [SupportController::class, 'show']);
@@ -280,6 +350,7 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
     Route::put('/orders/{order}', [OrderController::class, 'update']);
     Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+    Route::patch('/orders/{order}/shipping', [OrderController::class, 'updateShipping']);
 
     // Comparison routes
     Route::get('/comparison', [ComparisonController::class, 'index']);
@@ -291,7 +362,7 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
     Route::get('/comparison/history', [ComparisonController::class, 'getHistory']);
     Route::post('/comparison/export', [ComparisonController::class, 'export']);
     Route::get('/comparison/session/product', [ComparisonController::class, 'getSessionProducts']);
-    
+
     // Comparison session routes
     Route::get('/comparison/session/{sessionId}', [ComparisonController::class, 'getSession']);
     Route::post('/comparison/session/{sessionId}/share', [ComparisonController::class, 'shareSession']);
@@ -328,7 +399,7 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
     Route::get('/marketplace/trending', [MarketplaceController::class, 'getTrending']);
     Route::get('/marketplace/categories', [MarketplaceController::class, 'getCategories']);
     Route::get('/marketplace/insights', [MarketplaceController::class, 'getInsights']);
-    
+
     // Admin marketplace routes
     Route::middleware('permission:admin.analytics')->group(function () {
         Route::get('/marketplace/analytics', [MarketplaceController::class, 'getAnalytics']);
@@ -363,6 +434,11 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
         Route::put('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
         Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
         Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
+    });
+
+    Route::middleware('permission:activity_logs.view')->group(function () {
+        Route::get('/activity-logs', [NotificationController::class, 'getActivityLog']);
+        Route::get('/activity-logs/recent', [NotificationController::class, 'getRecentActivities']);
     });
 
     // Messages routes
@@ -414,6 +490,7 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
         Route::middleware('permission:kyc.view')->group(function () {
             Route::get('/admin/kyc/applications', [AdminController::class, 'getKYCApplications']);
             Route::get('/admin/kyc/applications/{id}', [AdminController::class, 'getKYCApplication']);
+            Route::get('/admin/kyc/documents/view', [AdminController::class, 'getKYCDocument']);
             Route::get('/admin/kyc/documents/{document}', [AdminController::class, 'getKYCDocument']);
         });
         Route::middleware('permission:kyc.approve')->group(function () {
@@ -430,8 +507,17 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
             Route::post('/admin/transactions/{transaction}/refund', [AdminController::class, 'refundTransaction']);
         });
 
+        Route::middleware('permission:payments.manage')->group(function () {
+            Route::get('/admin/withdrawals', [AdminWithdrawalController::class, 'index']);
+            Route::get('/admin/withdrawals/{id}', [AdminWithdrawalController::class, 'show']);
+            Route::post('/admin/withdrawals/{id}/approve', [AdminWithdrawalController::class, 'approve']);
+            Route::post('/admin/withdrawals/{id}/reject', [AdminWithdrawalController::class, 'reject']);
+            Route::post('/admin/withdrawals/{id}/complete', [AdminWithdrawalController::class, 'complete']);
+        });
+
         // Reports with permissions
         Route::middleware('permission:reports.view')->group(function () {
+            Route::get('/admin/reports/overview', [AdminController::class, 'getReportsOverview']);
             Route::get('/admin/reports/users', [AdminController::class, 'getUserReport']);
             Route::get('/admin/reports/transactions', [AdminController::class, 'getTransactionReport']);
             Route::get('/admin/reports/revenue', [AdminController::class, 'getRevenueReport']);
@@ -452,6 +538,12 @@ Route::middleware(['auth:sanctum', 'rate_limit:api,60,1', \App\Http\Middleware\T
         Route::middleware('permission:system.settings')->group(function () {
             Route::get('/admin/settings', [AdminController::class, 'getSettings']);
             Route::put('/admin/settings', [AdminController::class, 'updateSettings']);
+            Route::get('/admin/payment-gateways', [AdminController::class, 'getPaymentGateways']);
+            Route::put('/admin/payment-gateways', [AdminController::class, 'updatePaymentGateways']);
+            Route::post('/admin/payment-gateways/{gateway}/test', [AdminController::class, 'testPaymentGateway']);
+            Route::get('/admin/featured-listings/pending', [FeaturedListingController::class, 'pending']);
+            Route::post('/admin/featured-listings/{id}/approve', [FeaturedListingController::class, 'approve']);
+            Route::post('/admin/featured-listings/{id}/reject', [FeaturedListingController::class, 'reject']);
             Route::get('/admin/system/health', [AdminController::class, 'getSystemHealth']);
             Route::get('/admin/system/logs', [AdminController::class, 'getSystemLogs']);
         });

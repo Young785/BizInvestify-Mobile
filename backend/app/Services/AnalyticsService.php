@@ -16,6 +16,7 @@ use App\Models\FeaturedListing;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use App\Support\DatabaseDateExpressions;
 
 class AnalyticsService
 {
@@ -25,7 +26,7 @@ class AnalyticsService
     public function getPlatformOverview(string $period = '30d'): array
     {
         $startDate = $this->getStartDate($period);
-        
+
         return [
             'users' => $this->getUserMetrics($startDate),
             'revenue' => $this->getRevenueMetrics($startDate),
@@ -170,7 +171,7 @@ class AnalyticsService
     public function getSellerAnalytics(int $userId, string $period = '30d'): array
     {
         $startDate = $this->getStartDate($period);
-        
+
         return [
             'overview' => $this->getSellerOverview($userId, $startDate),
             'products' => $this->getSellerProducts($userId, $startDate),
@@ -186,7 +187,7 @@ class AnalyticsService
     public function getBuyerAnalytics(int $userId, string $period = '30d'): array
     {
         $startDate = $this->getStartDate($period);
-        
+
         return [
             'overview' => $this->getBuyerOverview($userId, $startDate),
             'purchases' => $this->getBuyerPurchases($userId, $startDate),
@@ -235,7 +236,7 @@ class AnalyticsService
     public function exportAnalyticsData(array $filters, string $format = 'csv'): string
     {
         $data = $this->generateCustomReport($filters);
-        
+
         switch ($format) {
             case 'csv':
                 return $this->exportToCsv($data['details']);
@@ -296,9 +297,9 @@ class AnalyticsService
     private function getRegistrationTrend(Carbon $startDate): array
     {
         return User::select(
-                DB::raw('DATE(created_at) as date'),
-                DB::raw('count(*) as count')
-            )
+            DatabaseDateExpressions::dateKey(),
+            DB::raw('count(*) as count')
+        )
             ->where('created_at', '>=', $startDate)
             ->groupBy('date')
             ->orderBy('date')
@@ -319,9 +320,9 @@ class AnalyticsService
     private function getRevenueByMonth(Carbon $startDate): array
     {
         return Transaction::select(
-                DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
-                DB::raw('sum(amount) as total')
-            )
+            DatabaseDateExpressions::monthKey(),
+            DB::raw('sum(amount) as total')
+        )
             ->where('status', 'completed')
             ->where('created_at', '>=', $startDate)
             ->groupBy('month')
@@ -333,9 +334,9 @@ class AnalyticsService
     private function getTopRevenueProducts(Carbon $startDate): array
     {
         return Product::select('products.title', DB::raw('sum(transactions.amount) as revenue'))
-            ->join('transactions', function($join) {
+            ->join('transactions', function ($join) {
                 $join->on('products.id', '=', 'transactions.listing_id')
-                     ->where('transactions.listing_type', '=', 'product');
+                    ->where('transactions.listing_type', '=', 'product');
             })
             ->where('transactions.status', 'completed')
             ->where('transactions.created_at', '>=', $startDate)
@@ -349,9 +350,9 @@ class AnalyticsService
     private function getTopRevenueBusinesses(Carbon $startDate): array
     {
         return Business::select('businesses.name', DB::raw('sum(transactions.amount) as revenue'))
-            ->join('transactions', function($join) {
+            ->join('transactions', function ($join) {
                 $join->on('businesses.id', '=', 'transactions.listing_id')
-                     ->where('transactions.listing_type', '=', 'business');
+                    ->where('transactions.listing_type', '=', 'business');
             })
             ->where('transactions.status', 'completed')
             ->where('transactions.created_at', '>=', $startDate)
@@ -538,18 +539,20 @@ class AnalyticsService
     {
         return Product::where('seller_id', $userId)
             ->where('status', 'active')
-            ->count() + 
+            ->count() +
             Business::where('seller_id', $userId)
-            ->where('status', 'active')
-            ->count();
+                ->where('status', 'active')
+                ->count();
     }
 
     private function getSellerProducts(int $userId, Carbon $startDate): array
     {
         return Product::where('seller_id', $userId)
-            ->with(['transactions' => function($query) {
-                $query->where('status', 'completed');
-            }])
+            ->with([
+                'transactions' => function ($query) {
+                    $query->where('status', 'completed');
+                }
+            ])
             ->get()
             ->map(function ($product) {
                 return [
@@ -566,9 +569,11 @@ class AnalyticsService
     private function getSellerBusinesses(int $userId, Carbon $startDate): array
     {
         return Business::where('seller_id', $userId)
-            ->with(['transactions' => function($query) {
-                $query->where('status', 'completed');
-            }])
+            ->with([
+                'transactions' => function ($query) {
+                    $query->where('status', 'completed');
+                }
+            ])
             ->get()
             ->map(function ($business) {
                 return [
@@ -588,7 +593,7 @@ class AnalyticsService
             ->where('status', 'completed')
             ->where('created_at', '>=', $startDate)
             ->select(
-                DB::raw('DATE(created_at) as date'),
+                DatabaseDateExpressions::dateKey(),
                 DB::raw('sum(amount) as revenue')
             )
             ->groupBy('date')
@@ -663,7 +668,7 @@ class AnalyticsService
             ->toArray();
     }
 
-    private function getBuyerBehavior(int $userId, Carbon $startDate): array  
+    private function getBuyerBehavior(int $userId, Carbon $startDate): array
     {
         return [
             'page_views' => AnalyticsEvent::where('user_id', $userId)
@@ -694,10 +699,10 @@ class AnalyticsService
 
     private function getBuyerTopCategories(int $userId, Carbon $startDate): array
     {
-        return Product::join('transactions', function($join) {
-                $join->on('products.id', '=', 'transactions.listing_id')
-                     ->where('transactions.listing_type', '=', 'product');
-            })
+        return Product::join('transactions', function ($join) {
+            $join->on('products.id', '=', 'transactions.listing_id')
+                ->where('transactions.listing_type', '=', 'product');
+        })
             ->where('transactions.buyer_id', $userId)
             ->where('transactions.status', 'completed')
             ->where('transactions.created_at', '>=', $startDate)
@@ -711,9 +716,9 @@ class AnalyticsService
 
     private function getBuyerTopSellers(int $userId, Carbon $startDate): array
     {
-        return Transaction::where('buyer_id', $userId)
-            ->where('status', 'completed')
-            ->where('created_at', '>=', $startDate)
+        return Transaction::where('transactions.buyer_id', $userId)
+            ->where('transactions.status', 'completed')
+            ->where('transactions.created_at', '>=', $startDate)
             ->join('users', 'transactions.seller_id', '=', 'users.id')
             ->select('users.name', DB::raw('count(*) as purchases'))
             ->groupBy('users.id', 'users.name')
@@ -753,12 +758,12 @@ class AnalyticsService
             ->where('user_id', $userId)
             ->where('created_at', '>=', $startDate)
             ->count();
-            
+
         $purchases = Transaction::where('seller_id', $userId)
             ->where('status', 'completed')
             ->where('created_at', '>=', $startDate)
             ->count();
-            
+
         return $views > 0 ? ($purchases / $views) * 100 : 0;
     }
 
@@ -777,9 +782,9 @@ class AnalyticsService
     private function calculateSellerSatisfaction(int $userId, Carbon $startDate): float
     {
         return Review::whereHas('reviewable', function ($query) use ($userId) {
-                $query->where('reviewable_type', 'App\\Models\\Product')
-                      ->where('seller_id', $userId);
-            })
+            $query->where('reviewable_type', 'App\\Models\\Product')
+                ->where('seller_id', $userId);
+        })
             ->where('created_at', '>=', $startDate)
             ->avg('rating') ?? 0;
     }
@@ -842,9 +847,9 @@ class AnalyticsService
     private function getUserGrowthTrend(Carbon $startDate): array
     {
         return User::select(
-                DB::raw('DATE(created_at) as date'),
-                DB::raw('count(*) as count')
-            )
+            DatabaseDateExpressions::dateKey(),
+            DB::raw('count(*) as count')
+        )
             ->where('created_at', '>=', $startDate)
             ->groupBy('date')
             ->orderBy('date')
@@ -855,9 +860,9 @@ class AnalyticsService
     private function getRevenueTrend(Carbon $startDate): array
     {
         return Transaction::select(
-                DB::raw('DATE(created_at) as date'),
-                DB::raw('sum(amount) as revenue')
-            )
+            DatabaseDateExpressions::dateKey(),
+            DB::raw('sum(amount) as revenue')
+        )
             ->where('status', 'completed')
             ->where('created_at', '>=', $startDate)
             ->groupBy('date')
@@ -869,9 +874,9 @@ class AnalyticsService
     private function getEngagementTrend(Carbon $startDate): array
     {
         return AnalyticsEvent::select(
-                DB::raw('DATE(created_at) as date'),
-                DB::raw('count(*) as events')
-            )
+            DatabaseDateExpressions::dateKey(),
+            DB::raw('count(*) as events')
+        )
             ->where('created_at', '>=', $startDate)
             ->groupBy('date')
             ->orderBy('date')
@@ -891,9 +896,9 @@ class AnalyticsService
     private function getDailyPattern(Carbon $startDate): array
     {
         return AnalyticsEvent::select(
-                DB::raw('HOUR(created_at) as hour'),
-                DB::raw('count(*) as events')
-            )
+            DatabaseDateExpressions::hour(),
+            DB::raw('count(*) as events')
+        )
             ->where('created_at', '>=', $startDate)
             ->groupBy('hour')
             ->orderBy('hour')
@@ -904,9 +909,9 @@ class AnalyticsService
     private function getWeeklyPattern(Carbon $startDate): array
     {
         return AnalyticsEvent::select(
-                DB::raw('DAYOFWEEK(created_at) as day'),
-                DB::raw('count(*) as events')
-            )
+            DatabaseDateExpressions::dayOfWeek(),
+            DB::raw('count(*) as events')
+        )
             ->where('created_at', '>=', $startDate)
             ->groupBy('day')
             ->orderBy('day')
@@ -917,9 +922,9 @@ class AnalyticsService
     private function getMonthlyPattern(Carbon $startDate): array
     {
         return AnalyticsEvent::select(
-                DB::raw('MONTH(created_at) as month'),
-                DB::raw('count(*) as events')
-            )
+            DatabaseDateExpressions::monthNumber(),
+            DB::raw('count(*) as events')
+        )
             ->where('created_at', '>=', $startDate)
             ->groupBy('month')
             ->orderBy('month')
@@ -929,10 +934,10 @@ class AnalyticsService
 
     private function getBuyerFavoriteCategories(int $userId, Carbon $startDate): array
     {
-        return Product::join('transactions', function($join) {
-                $join->on('products.id', '=', 'transactions.listing_id')
-                     ->where('transactions.listing_type', '=', 'product');
-            })
+        return Product::join('transactions', function ($join) {
+            $join->on('products.id', '=', 'transactions.listing_id')
+                ->where('transactions.listing_type', '=', 'product');
+        })
             ->where('transactions.buyer_id', $userId)
             ->where('transactions.status', 'completed')
             ->where('transactions.created_at', '>=', $startDate)
@@ -943,4 +948,4 @@ class AnalyticsService
             ->pluck('purchases', 'category')
             ->toArray();
     }
-} 
+}

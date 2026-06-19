@@ -25,8 +25,10 @@ class MessageController extends Controller
             $perPage = $request->get('per_page', 15);
 
             // Get unique conversations with latest message
-            $conversations = Message::where('sender_id', $user->id)
-                ->orWhere('receiver_id', $user->id)
+            $conversations = Message::where(function ($query) use ($user) {
+                    $query->where('sender_id', $user->id)
+                        ->orWhere('receiver_id', $user->id);
+                })
                 ->with(['sender', 'receiver'])
                 ->orderBy('created_at', 'desc')
                 ->get()
@@ -139,9 +141,8 @@ class MessageController extends Controller
                 ], 400);
             }
 
-            // Security: Sanitize message content
-            $sanitizedMessage = strip_tags($request->message);
-            $sanitizedMessage = htmlspecialchars($sanitizedMessage, ENT_QUOTES, 'UTF-8');
+            // Security: strip HTML tags from message content
+            $sanitizedMessage = trim(strip_tags($request->message));
 
             DB::beginTransaction();
 
@@ -157,18 +158,19 @@ class MessageController extends Controller
             $message->load(['sender', 'receiver']);
 
             // Create notification for receiver
-            Notification::create([
-                'user_id' => $request->receiver_id,
-                'type' => 'message',
-                'title' => 'New Message',
-                'message' => 'You have a new message from ' . $user->first_name . ' ' . $user->last_name,
-                'data' => json_encode([
+            Notification::createNotification(
+                (int) $request->receiver_id,
+                'message',
+                'New Message',
+                'You have a new message from ' . $user->first_name . ' ' . $user->last_name,
+                [
                     'sender_id' => $user->id,
                     'sender_name' => $user->first_name . ' ' . $user->last_name,
-                    'message_id' => $message->id
-                ]),
-                'priority' => 'medium'
-            ]);
+                    'message_id' => $message->id,
+                    'action_url' => '/dashboard/messages',
+                ],
+                'medium'
+            );
 
             // Log activity
             ActivityLog::create([
@@ -177,7 +179,7 @@ class MessageController extends Controller
                 'description' => 'Sent a message to ' . $message->receiver->first_name . ' ' . $message->receiver->last_name,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'severity' => 'info'
+                'severity' => 'low'
             ]);
 
             DB::commit();
@@ -277,7 +279,7 @@ class MessageController extends Controller
                 'description' => 'Deleted a message',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'severity' => 'info'
+                'severity' => 'low'
             ]);
 
             return response()->json([

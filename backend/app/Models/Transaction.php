@@ -38,8 +38,9 @@ class Transaction extends Model
         'amount' => 'decimal:2',
         'commission' => 'decimal:2',
         'net_amount' => 'decimal:2',
+        'metadata' => 'array',
         'refunded_at' => 'datetime',
-        'completed_at' => 'datetime'
+        'completed_at' => 'datetime',
     ];
 
     const STATUS_PENDING = 'pending';

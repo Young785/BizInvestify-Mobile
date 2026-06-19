@@ -3,14 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Notification;
 use App\Models\ActivityLog;
-use Illuminate\Http\Request;
+use App\Models\Notification;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
+    public function __construct(private NotificationService $notifications)
+    {
+    }
+
     /**
      * Get user's notifications (index method for API routes)
      */
@@ -26,12 +31,13 @@ class NotificationController extends Controller
     {
         try {
             $user = Auth::user();
-            $perPage = $request->get('per_page', 15);
+            $perPage = (int) $request->get('per_page', 15);
             $type = $request->get('type');
             $priority = $request->get('priority');
-            $unreadOnly = $request->get('unread_only', false);
+            $category = $request->get('category');
+            $search = $request->get('search');
 
-            $query = Notification::where('user_id', $user->id);
+            $query = Notification::where('user_id', $user->id)->active();
 
             if ($type) {
                 $query->where('type', $type);
@@ -41,21 +47,40 @@ class NotificationController extends Controller
                 $query->where('priority', $priority);
             }
 
-            if ($unreadOnly) {
-                $query->where('read_at', null);
+            if ($request->boolean('unread_only')) {
+                $query->unread();
+            } elseif ($request->has('is_read')) {
+                $query->where('is_read', $request->boolean('is_read'));
             }
 
-            $notifications = $query->orderBy('created_at', 'desc')
-                ->paginate($perPage);
+            if ($search) {
+                $term = '%' . addcslashes($search, '%_\\') . '%';
+                $query->where(function ($q) use ($term) {
+                    $q->where('title', 'like', $term)
+                        ->orWhere('message', 'like', $term);
+                });
+            }
+
+            if ($category) {
+                $types = $this->typesForCategory((string) $category);
+                if ($types) {
+                    $query->whereIn('type', $types);
+                }
+            }
+
+            $notifications = $query->orderByDesc('created_at')->paginate($perPage);
+            $notifications->getCollection()->transform(
+                fn (Notification $notification) => $this->notifications->format($notification)
+            );
 
             return response()->json([
                 'success' => true,
-                'data' => $notifications
+                'data' => $notifications,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch notifications'
+                'message' => 'Failed to fetch notifications',
             ], 500);
         }
     }
@@ -72,13 +97,13 @@ class NotificationController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'unread_count' => $count
-                ]
+                    'unread_count' => $count,
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch unread count'
+                'message' => 'Failed to fetch unread count',
             ], 500);
         }
     }
@@ -94,10 +119,10 @@ class NotificationController extends Controller
                 ->where('user_id', $user->id)
                 ->first();
 
-            if (!$notificationModel) {
+            if (! $notificationModel) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Notification not found'
+                    'message' => 'Notification not found',
                 ], 404);
             }
 
@@ -105,12 +130,13 @@ class NotificationController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Notification marked as read'
+                'message' => 'Notification marked as read',
+                'data' => $this->notifications->format($notificationModel->fresh()),
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to mark notification as read'
+                'message' => 'Failed to mark notification as read',
             ], 500);
         }
     }
@@ -126,12 +152,15 @@ class NotificationController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $count . ' notifications marked as read'
+                'message' => $count . ' notifications marked as read',
+                'data' => [
+                    'marked_count' => $count,
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to mark notifications as read'
+                'message' => 'Failed to mark notifications as read',
             ], 500);
         }
     }
@@ -144,7 +173,7 @@ class NotificationController extends Controller
         try {
             $user = Auth::user();
             $perPage = $request->get('per_page', 15);
-            $type = $request->get('type');
+            $type = $request->get('type') ?? $request->get('activity_type');
             $severity = $request->get('severity');
 
             $query = ActivityLog::where('user_id', $user->id);
@@ -162,12 +191,12 @@ class NotificationController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $activities
+                'data' => $activities,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch activity log'
+                'message' => 'Failed to fetch activity log',
             ], 500);
         }
     }
@@ -183,12 +212,12 @@ class NotificationController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $activities
+                'data' => $activities,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch recent activities'
+                'message' => 'Failed to fetch recent activities',
             ], 500);
         }
     }
@@ -204,10 +233,10 @@ class NotificationController extends Controller
                 ->where('user_id', $user->id)
                 ->first();
 
-            if (!$notificationModel) {
+            if (! $notificationModel) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Notification not found'
+                    'message' => 'Notification not found',
                 ], 404);
             }
 
@@ -215,13 +244,26 @@ class NotificationController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Notification deleted'
+                'message' => 'Notification deleted',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete notification'
+                'message' => 'Failed to delete notification',
             ], 500);
         }
     }
-} 
+
+    private function typesForCategory(string $category): array
+    {
+        return match ($category) {
+            'message' => ['message'],
+            'kyc' => ['kyc_approved', 'kyc_rejected'],
+            'transaction' => ['payment_received', 'transaction', 'refund'],
+            'investment' => ['investment_received'],
+            'marketplace' => ['listing_approved', 'listing_rejected'],
+            'security' => ['security_alert'],
+            default => [],
+        };
+    }
+}

@@ -1,0 +1,32 @@
+<?php
+
+use App\Models\Product;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('products', function (Blueprint $table) {
+            $table->string('slug')->nullable()->unique()->after('title');
+        });
+
+        Product::query()->orderBy('id')->each(function (Product $product) {
+            $product->slug = Product::generateUniqueSlug($product->title, $product->id);
+            $product->saveQuietly();
+        });
+
+        Schema::table('products', function (Blueprint $table) {
+            $table->string('slug')->nullable(false)->change();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('products', function (Blueprint $table) {
+            $table->dropColumn('slug');
+        });
+    }
+};

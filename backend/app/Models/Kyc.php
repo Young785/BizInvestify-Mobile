@@ -139,6 +139,10 @@ class Kyc extends Model
      */
     public function approve(User $reviewer, string $notes = null): bool
     {
+        if (! in_array($this->status, [self::STATUS_PENDING, self::STATUS_UNDER_REVIEW], true)) {
+            return false;
+        }
+
         $updated = $this->update([
             'status' => self::STATUS_APPROVED,
             'reviewed_at' => now(),
@@ -187,6 +191,10 @@ class Kyc extends Model
      */
     public function reject(User $reviewer, string $reason, string $notes = null): bool
     {
+        if (! in_array($this->status, [self::STATUS_PENDING, self::STATUS_UNDER_REVIEW], true)) {
+            return false;
+        }
+
         $updated = $this->update([
             'status' => self::STATUS_REJECTED,
             'reviewed_at' => now(),

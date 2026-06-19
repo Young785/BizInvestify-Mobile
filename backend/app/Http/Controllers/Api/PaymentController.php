@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\PaymentService;
+use App\Services\PaymentGatewayService;
+use App\Services\StripeConnectService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -286,6 +288,202 @@ class PaymentController extends Controller
     }
 
     /**
+     * Get enabled payment gateways for checkout.
+     */
+    public function getAvailableGateways(PaymentGatewayService $gatewayService): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $gatewayService->getPublicGateways(),
+        ]);
+    }
+
+    /**
+     * Create Flutterwave payment for product
+     */
+    public function createFlutterwaveProductPayment(Request $request, PaymentService $paymentService): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'product_id' => 'required|exists:products,id',
+                'quantity' => 'nullable|integer|min:1',
+            ]);
+            $user = $request->user();
+            $product = Product::findOrFail($validated['product_id']);
+            $quantity = $validated['quantity'] ?? 1;
+            $result = $paymentService->createFlutterwaveProductPayment($user, $product, $quantity);
+            return response()->json($result['success'] ? ['success' => true, 'data' => $result] : ['success' => false, 'message' => $result['error'] ?? 'Failed to init Flutterwave'], $result['success'] ? 200 : 400);
+        } catch (\Exception $e) {
+            Log::error('createFlutterwaveProductPayment failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Failed to init Flutterwave payment'], 500);
+        }
+    }
+
+    /**
+     * Create Flutterwave payment for investment
+     */
+    public function createFlutterwaveInvestmentPayment(Request $request, PaymentService $paymentService): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'business_id' => 'required|exists:businesses,id',
+                'amount' => 'required|numeric|min:1',
+            ]);
+            $user = $request->user();
+            $business = Business::findOrFail($validated['business_id']);
+            $amount = (float) $validated['amount'];
+            $result = $paymentService->createFlutterwaveInvestmentPayment($user, $business, $amount);
+            return response()->json($result['success'] ? ['success' => true, 'data' => $result] : ['success' => false, 'message' => $result['error'] ?? 'Failed to init Flutterwave'], $result['success'] ? 200 : 400);
+        } catch (\Exception $e) {
+            Log::error('createFlutterwaveInvestmentPayment failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Failed to init Flutterwave payment'], 500);
+        }
+    }
+
+    /**
+     * Verify Flutterwave payment via reference
+     */
+    public function verifyFlutterwavePayment(Request $request, PaymentService $paymentService): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'reference' => 'required|string',
+            ]);
+            $result = $paymentService->verifyFlutterwavePayment($validated['reference']);
+            return response()->json($result['success'] ? ['success' => true, 'data' => $result] : ['success' => false, 'message' => $result['error'] ?? 'Verification failed'], $result['success'] ? 200 : 400);
+        } catch (\Exception $e) {
+            Log::error('verifyFlutterwavePayment failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Failed to verify Flutterwave payment'], 500);
+        }
+    }
+
+    /**
+     * Paystack redirect callback after customer pays.
+     */
+    public function paystackCallback(Request $request, PaymentService $paymentService, PaymentGatewayService $gatewayService)
+    {
+        $reference = $request->query('reference') ?? $request->query('trxref');
+
+        if (!$reference) {
+            return redirect($gatewayService->getFrontendRedirectUrl('failed'));
+        }
+
+        $result = $paymentService->verifyPaystackPayment($reference);
+
+        return redirect($gatewayService->getFrontendRedirectUrl(
+            $result['success'] ? 'success' : 'failed',
+            $reference
+        ));
+    }
+
+    /**
+     * Flutterwave redirect callback after customer pays.
+     */
+    public function flutterwaveCallback(Request $request, PaymentService $paymentService, PaymentGatewayService $gatewayService)
+    {
+        $reference = $request->query('reference')
+            ?? $request->query('tx_ref')
+            ?? $request->query('transaction_id');
+
+        if (!$reference) {
+            return redirect($gatewayService->getFrontendRedirectUrl('failed'));
+        }
+
+        $result = $paymentService->verifyFlutterwavePayment($reference);
+
+        return redirect($gatewayService->getFrontendRedirectUrl(
+            $result['success'] ? 'success' : 'failed',
+            $reference
+        ));
+    }
+
+    /**
+     * Flutterwave webhook handler
+     */
+    public function handleFlutterwaveWebhook(Request $request, PaymentService $paymentService): JsonResponse
+    {
+        $signature = $request->header('verif-hash');
+        $secret = app(PaymentGatewayService::class)->getWebhookSecret('flutterwave');
+
+        if ($secret && $signature !== $secret) {
+            Log::warning('Flutterwave webhook signature mismatch');
+            return response()->json(['success' => false, 'message' => 'Invalid signature'], 400);
+        }
+
+        try {
+            $event = $request->all();
+            if (($event['event'] ?? '') === 'charge.completed' && ($event['data']['status'] ?? '') === 'successful') {
+                $reference = $event['data']['tx_ref'] ?? null;
+                if ($reference) {
+                    $paymentService->verifyFlutterwavePayment($reference);
+                }
+            }
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('Flutterwave webhook processing failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false], 500);
+        }
+    }
+
+    /**
+     * Create subscription payment intent (Stripe)
+     */
+    public function createSubscriptionPaymentIntent(Request $request, PaymentService $paymentService): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'plan_id' => 'required|string',
+                'currency' => 'nullable|string|size:3',
+            ]);
+
+            $user = $request->user();
+            $currency = strtoupper($validated['currency'] ?? 'USD');
+
+            $result = $paymentService->createSubscriptionPaymentIntent($user, $validated['plan_id'], $currency);
+
+            if (!$result['success']) {
+                return response()->json(['success' => false, 'message' => $result['error'] ?? 'Failed to create payment'], 400);
+            }
+
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            Log::error('createSubscriptionPaymentIntent failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Failed to create subscription payment'], 500);
+        }
+    }
+
+    /**
+     * Create featured listing promotion payment intent (Stripe)
+     */
+    public function createFeaturedListingPaymentIntent(Request $request, PaymentService $paymentService): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|min:1',
+                'listable_type' => 'nullable|in:product,business',
+                'listable_id' => 'nullable|integer',
+            ]);
+
+            $user = $request->user();
+            $meta = array_filter([
+                'listable_type' => $validated['listable_type'] ?? null,
+                'listable_id' => $validated['listable_id'] ?? null,
+            ]);
+
+            $result = $paymentService->createFeaturedListingPaymentIntent($user, (float) $validated['amount'], $meta);
+
+            if (!$result['success']) {
+                return response()->json(['success' => false, 'message' => $result['error'] ?? 'Failed to create payment'], 400);
+            }
+
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            Log::error('createFeaturedListingPaymentIntent failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Failed to create featured listing payment'], 500);
+        }
+    }
+
+    /**
      * Create escrow transaction
      */
     public function createEscrowTransaction(Request $request, PaymentService $paymentService): JsonResponse
@@ -303,6 +501,53 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             Log::error('createEscrowTransaction failed', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Failed to create escrow'], 500);
+        }
+    }
+
+    /**
+     * Release escrow funds
+     */
+    public function listEscrowTransactions(Request $request, \App\Services\EscrowService $escrowService): JsonResponse
+    {
+        try {
+            $escrows = $escrowService->listForUser(
+                $request->user(),
+                $request->get('status'),
+                $request->get('role')
+            );
+
+            $escrows->setCollection(
+                $escrows->getCollection()->map(fn ($tx) => $escrowService->format($tx))
+            );
+
+            return response()->json(['success' => true, 'data' => $escrows]);
+        } catch (\Exception $e) {
+            Log::error('listEscrowTransactions failed', ['error' => $e->getMessage()]);
+
+            return response()->json(['success' => false, 'message' => 'Failed to load escrows'], 500);
+        }
+    }
+
+    public function updateEscrowConditions(Request $request, string $escrow_id, \App\Services\EscrowService $escrowService): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'conditions' => 'required|array',
+            ]);
+
+            $transaction = $escrowService->updateConditions($escrow_id, $request->user(), $validated['conditions']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Escrow milestones updated',
+                'data' => $escrowService->format($transaction),
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            Log::error('updateEscrowConditions failed', ['error' => $e->getMessage()]);
+
+            return response()->json(['success' => false, 'message' => 'Failed to update escrow'], 500);
         }
     }
 
@@ -327,16 +572,21 @@ class PaymentController extends Controller
     /**
      * Get escrow transaction by reference id
      */
-    public function getEscrowTransaction(string $escrow_id): JsonResponse
+    public function getEscrowTransaction(string $escrow_id, \App\Services\EscrowService $escrowService): JsonResponse
     {
         try {
-            $transaction = Transaction::where('reference_id', $escrow_id)->where('type', 'escrow')->first();
-            if (!$transaction) {
+            $transaction = $escrowService->findForUser($escrow_id, auth()->user());
+            if (! $transaction) {
                 return response()->json(['success' => false, 'message' => 'Escrow not found'], 404);
             }
-            return response()->json(['success' => true, 'data' => $transaction]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $escrowService->format($transaction->load(['buyer', 'seller'])),
+            ]);
         } catch (\Exception $e) {
             Log::error('getEscrowTransaction failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to fetch escrow'], 500);
         }
     }
@@ -378,13 +628,24 @@ class PaymentController extends Controller
     /**
      * Create Stripe Connect account for seller
      */
-    public function createStripeAccount(Request $request, PaymentService $paymentService): JsonResponse
+    public function createStripeAccount(Request $request, StripeConnectService $stripeConnect): JsonResponse
     {
         try {
-            $result = $paymentService->createConnectAccount($request->user());
-            return response()->json($result['success'] ? ['success' => true, 'data' => $result] : ['success' => false, 'message' => $result['error'] ?? 'Failed to create account'], $result['success'] ? 200 : 400);
+            $result = $stripeConnect->startOnboarding(
+                $request->user(),
+                $request->input('return_url'),
+                $request->input('refresh_url')
+            );
+
+            return response()->json(
+                $result['success']
+                    ? ['success' => true, 'data' => $result]
+                    : ['success' => false, 'message' => $result['error'] ?? 'Failed to create account'],
+                $result['success'] ? 200 : 400
+            );
         } catch (\Exception $e) {
             Log::error('createStripeAccount failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to create Stripe account'], 500);
         }
     }
@@ -392,14 +653,54 @@ class PaymentController extends Controller
     /**
      * Get Stripe Connect account status
      */
-    public function getStripeAccountStatus(Request $request, PaymentService $paymentService): JsonResponse
+    public function getStripeAccountStatus(Request $request, StripeConnectService $stripeConnect): JsonResponse
     {
         try {
-            $result = $paymentService->getConnectAccountStatus($request->user());
-            return response()->json($result['success'] ? ['success' => true, 'data' => $result] : ['success' => false, 'message' => $result['error'] ?? 'Failed to fetch account status'], $result['success'] ? 200 : 400);
+            return response()->json([
+                'success' => true,
+                'data' => $stripeConnect->getStatus($request->user()),
+            ]);
         } catch (\Exception $e) {
             Log::error('getStripeAccountStatus failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to fetch Stripe account status'], 500);
+        }
+    }
+
+    /**
+     * Start Stripe Connect onboarding (creates account if needed)
+     */
+    public function startStripeConnectOnboarding(Request $request, StripeConnectService $stripeConnect): JsonResponse
+    {
+        return $this->createStripeAccount($request, $stripeConnect);
+    }
+
+    /**
+     * Get Stripe Connect status for seller payouts
+     */
+    public function getStripeConnectStatus(Request $request, StripeConnectService $stripeConnect): JsonResponse
+    {
+        return $this->getStripeAccountStatus($request, $stripeConnect);
+    }
+
+    /**
+     * Open Stripe Express dashboard for connected seller
+     */
+    public function getStripeConnectDashboard(Request $request, StripeConnectService $stripeConnect): JsonResponse
+    {
+        try {
+            $result = $stripeConnect->createDashboardLink($request->user());
+
+            return response()->json(
+                $result['success']
+                    ? ['success' => true, 'data' => $result]
+                    : ['success' => false, 'message' => $result['error'] ?? 'Failed to open dashboard'],
+                $result['success'] ? 200 : 400
+            );
+        } catch (\Exception $e) {
+            Log::error('getStripeConnectDashboard failed', ['error' => $e->getMessage()]);
+
+            return response()->json(['success' => false, 'message' => 'Failed to open Stripe dashboard'], 500);
         }
     }
 
@@ -410,7 +711,7 @@ class PaymentController extends Controller
     {
         $payload = $request->getContent();
         $sigHeader = $request->header('Stripe-Signature');
-        $endpointSecret = config('services.stripe.webhook_secret');
+        $endpointSecret = app(PaymentGatewayService::class)->getWebhookSecret('stripe');
         try {
             $event = StripeWebhook::constructEvent($payload, $sigHeader, $endpointSecret);
         } catch (\Exception $e) {
@@ -422,6 +723,8 @@ class PaymentController extends Controller
             if ($event->type === 'payment_intent.succeeded') {
                 $intent = $event->data->object; // contains id
                 $paymentService->confirmPayment($intent->id);
+            } elseif ($event->type === 'account.updated') {
+                app(StripeConnectService::class)->syncAccountFromWebhook($event->data->object);
             }
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
@@ -437,7 +740,7 @@ class PaymentController extends Controller
     {
         $payload = $request->getContent();
         $signature = $request->header('x-paystack-signature');
-        $secret = config('services.paystack.webhook_secret');
+        $secret = app(PaymentGatewayService::class)->getWebhookSecret('paystack');
         $computed = hash_hmac('sha512', $payload, $secret ?? '');
         if (!$secret || $computed !== $signature) {
             Log::warning('Paystack webhook signature mismatch');

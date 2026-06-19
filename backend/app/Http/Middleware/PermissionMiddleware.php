@@ -26,6 +26,11 @@ class PermissionMiddleware
             throw UnauthorizedException::notLoggedIn();
         }
 
+        $user = $authGuard->user();
+        if ($user->hasRole('super_admin') || $user->role === 'super_admin') {
+            return $next($request);
+        }
+
         $permissions = is_array($permission)
             ? $permission
             : explode('|', $permission);

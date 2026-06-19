@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\FeaturedListing;
 use App\Models\Product;
 use App\Models\Business;
+use App\Services\FeaturedListingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -13,6 +14,29 @@ use Illuminate\Support\Facades\Storage;
 
 class FeaturedListingController extends Controller
 {
+    public function __construct(private FeaturedListingService $featuredListingService)
+    {
+    }
+
+    private function parseTargeting(Request $request): ?array
+    {
+        $targeting = $request->get('targeting');
+        if (is_string($targeting)) {
+            $decoded = json_decode($targeting, true);
+            return is_array($decoded) ? $decoded : null;
+        }
+
+        return is_array($targeting) ? $targeting : null;
+    }
+
+    private function findOwnedListable(string $type, int $id, $user)
+    {
+        if ($type === 'product') {
+            return Product::where('id', $id)->where('seller_id', $user->id)->first();
+        }
+
+        return Business::where('id', $id)->where('seller_id', $user->id)->first();
+    }
     /**
      * Get featured listings for display
      */
@@ -105,7 +129,8 @@ class FeaturedListingController extends Controller
                 'promotion_type' => 'required|in:featured,sponsored,trending,editor_choice',
                 'daily_budget' => 'required|numeric|min:1',
                 'total_budget' => 'required|numeric|min:1',
-                'start_date' => 'required|date|after:today',
+                'transaction_id' => 'required|integer|exists:transactions,id',
+                'start_date' => 'required|date|after_or_equal:today',
                 'end_date' => 'required|date|after:start_date',
                 'targeting' => 'nullable|array',
                 'targeting.locations' => 'nullable|array',
@@ -126,11 +151,7 @@ class FeaturedListingController extends Controller
             $listableId = $request->get('listable_id');
 
             // Check if item exists and belongs to user
-            if ($listableType === 'product') {
-                $item = Product::where('id', $listableId)->where('user_id', $user->id)->first();
-            } else {
-                $item = Business::where('id', $listableId)->where('user_id', $user->id)->first();
-            }
+            $item = $this->findOwnedListable($listableType, $listableId, $user);
 
             if (!$item) {
                 return response()->json([
@@ -153,6 +174,33 @@ class FeaturedListingController extends Controller
                 ], 400);
             }
 
+            $transaction = \App\Models\Transaction::where('id', $request->get('transaction_id'))
+                ->where('user_id', $user->id)
+                ->where('type', 'featured_listing')
+                ->where('status', 'completed')
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A completed payment is required before creating a featured listing'
+                ], 402);
+            }
+
+            if (\App\Models\FeaturedListing::where('transaction_id', $transaction->id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This payment has already been used for a featured listing'
+                ], 400);
+            }
+
+            if ((float) $transaction->amount < (float) $request->get('total_budget')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment amount must cover the total promotion budget'
+                ], 400);
+            }
+
             // Handle banner image upload
             $bannerImage = null;
             if ($request->hasFile('banner_image')) {
@@ -162,6 +210,7 @@ class FeaturedListingController extends Controller
 
             $featuredListing = FeaturedListing::create([
                 'user_id' => $user->id,
+                'transaction_id' => $transaction->id,
                 'listable_type' => $listableType,
                 'listable_id' => $listableId,
                 'title' => $request->get('title'),
@@ -172,7 +221,7 @@ class FeaturedListingController extends Controller
                 'total_budget' => $request->get('total_budget'),
                 'start_date' => $request->get('start_date'),
                 'end_date' => $request->get('end_date'),
-                'targeting' => $request->get('targeting'),
+                'targeting' => $this->parseTargeting($request),
                 'status' => 'pending' // Requires admin approval
             ]);
 
@@ -501,6 +550,84 @@ class FeaturedListingController extends Controller
                 'message' => 'Failed to record click',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Admin: approve pending featured listing
+     */
+    public function approve(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            if (!$user->hasRole(['admin', 'super_admin'])) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+
+            $featuredListing = FeaturedListing::findOrFail($id);
+            $listing = $this->featuredListingService->approve($featuredListing, $user);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Featured listing approved',
+                'data' => $listing,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Admin: reject pending featured listing
+     */
+    public function reject(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            if (!$user->hasRole(['admin', 'super_admin'])) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+
+            $validated = $request->validate([
+                'reason' => 'required|string|max:500',
+            ]);
+
+            $featuredListing = FeaturedListing::findOrFail($id);
+            $listing = $this->featuredListingService->reject($featuredListing, $user, $validated['reason']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Featured listing rejected and refund initiated when applicable',
+                'data' => $listing,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Admin: list pending featured listings
+     */
+    public function pending(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            if (!$user->hasRole(['admin', 'super_admin'])) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+
+            $listings = FeaturedListing::where('status', 'pending')
+                ->with(['listable', 'user', 'transaction'])
+                ->orderByDesc('created_at')
+                ->paginate(20);
+
+            return response()->json(['success' => true, 'data' => $listings]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 } 
